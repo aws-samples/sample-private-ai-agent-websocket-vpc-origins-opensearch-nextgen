@@ -1573,7 +1573,7 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
             {
               "Ref": "ProxyImageRepoBB30DFC4",
             },
-            ":4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+            ":dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
           ],
         ],
       },
@@ -3066,7 +3066,7 @@ def is_complete(event, context):
             {
               "Name": "IMAGE_TAG",
               "Type": "PLAINTEXT",
-              "Value": "4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+              "Value": "dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
             },
             {
               "Name": "TARGET_PLATFORM",
@@ -3115,7 +3115,7 @@ def is_complete(event, context):
     }
   }
 }",
-          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a.zip",
+          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8.zip",
           "Type": "S3",
         },
         "TimeoutInMinutes": 30,
@@ -3858,7 +3858,7 @@ def is_complete(event, context):
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a.zip",
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8.zip",
                     ],
                   ],
                 },
@@ -4008,7 +4008,7 @@ def is_complete(event, context):
         "ProxyImageBuildRole70F6F0F8",
       ],
       "Properties": {
-        "ImageTag": "4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+        "ImageTag": "dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
         "ProjectName": {
           "Ref": "ProxyImageBuild77DEACC0",
         },

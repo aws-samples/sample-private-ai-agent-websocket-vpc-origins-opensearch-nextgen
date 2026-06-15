@@ -337,8 +337,11 @@ async def auth_login_submit(request: Request) -> Response:
         id_token = result["IdToken"]
         # Validate before trusting it (also warms the JWKS cache).
         await asyncio.to_thread(auth_mod.verify_token, id_token, settings)
-    except auth_mod.LoginError as exc:
-        return _login_error_response(str(exc), 401)
+    except auth_mod.LoginError:
+        # Don't reflect the raw exception text into the page (info exposure);
+        # log server-side and show a fixed, generic credential error.
+        logger.info("login attempt failed")
+        return _login_error_response("Incorrect username or password.", 401)
     except (auth_mod.AuthError, KeyError):
         logger.exception("login failed")
         return _login_error_response(
@@ -495,8 +498,11 @@ async def upload(request: Request) -> JSONResponse:
 
     try:
         text = docs_mod.extract_text(filename, data)
-    except docs_mod.DocumentError as exc:
-        return JSONResponse(status_code=400, content={"error": str(exc)})
+    except docs_mod.DocumentError:
+        # Do not echo the exception text back to the client (info exposure);
+        # log it server-side and return a fixed, generic message.
+        logger.exception("upload text extraction failed")
+        return JSONResponse(status_code=400, content={"error": _ERR_UPLOAD_TYPE})
     if not text.strip():
         return JSONResponse(status_code=400, content={"error": _ERR_UPLOAD_EMPTY})
 
