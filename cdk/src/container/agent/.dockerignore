@@ -1,0 +1,16 @@
+# Keep the Docker build context small and deterministic.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+tests/
+test/
+*.test.py
+requirements-dev.txt
+.gitkeep
+.DS_Store
