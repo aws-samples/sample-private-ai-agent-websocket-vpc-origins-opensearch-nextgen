@@ -967,7 +967,7 @@
       els.uploadStrip.classList.add("show");
       els.uploadStrip.classList.remove("processing");
       els.uploadBar.style.width = "0%";
-      els.uploadMsg.innerHTML = 'Uploading <span class="fname">' + file.name + '</span>…';
+      els.uploadMsg.innerHTML = 'Uploading <span class="fname">' + escapeHtml(file.name) + '</span>…';
       log("send", "UPLOAD", file.name + " (" + Math.round(file.size/1024) + " KB)");
 
       // Smooth progress model. Browser→server bytes fill 0–55%. The server then
@@ -1002,7 +1002,7 @@
         // All bytes sent; the server-side processing phase begins — start the creep.
         els.uploadStrip.classList.add("processing");
         if (pct < 55) setBar(55);
-        els.uploadMsg.innerHTML = 'Processing <span class="fname">' + file.name + '</span> — extracting text, embedding &amp; indexing…';
+        els.uploadMsg.innerHTML = 'Processing <span class="fname">' + escapeHtml(file.name) + '</span> — extracting text, embedding &amp; indexing…';
         startCreep();
       };
       xhr.onload = function () {
@@ -1011,7 +1011,7 @@
           var r = JSON.parse(xhr.responseText);
           finishTo100(function () {
             lastUpload = r;
-            els.uploadMsg.innerHTML = 'Ready: <span class="fname">' + (r.filename||"document") + '</span> · ' + (r.chars||0) + ' chars' + (r.indexed ? ' · indexed' : '');
+            els.uploadMsg.innerHTML = 'Ready: <span class="fname">' + escapeHtml(r.filename||"document") + '</span> · ' + (r.chars||0) + ' chars' + (r.indexed ? ' · indexed' : '');
             log("recv", "UPLOAD", "stored doc " + (r.documentId||"") + (r.indexed?" (indexed)":""));
             setTimeout(function(){ els.uploadStrip.classList.remove("show"); }, 4000);
             postAuditOffer(r);
