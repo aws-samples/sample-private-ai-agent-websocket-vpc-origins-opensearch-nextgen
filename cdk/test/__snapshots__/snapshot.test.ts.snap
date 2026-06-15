@@ -1,0 +1,6291 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`split-stack snapshots AgentCore stack template matches the stored snapshot 1`] = `
+{
+  "Outputs": {
+    "AgentRuntimeArn": {
+      "Description": "Bedrock AgentCore Runtime ARN hosting the Strands agent",
+      "Value": {
+        "Fn::GetAtt": [
+          "AgentCoreRuntime326B478F",
+          "AgentRuntimeArn",
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttAgentCoreRuntime326B478FAgentRuntimeArn750B14A8": {
+      "Export": {
+        "Name": "TestAgent:ExportsOutputFnGetAttAgentCoreRuntime326B478FAgentRuntimeArn750B14A8",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AgentCoreRuntime326B478F",
+          "AgentRuntimeArn",
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AgentCoreRuntime326B478F": {
+      "Properties": {
+        "AgentRuntimeArtifact": {
+          "ContainerConfiguration": {
+            "ContainerUri": "123456789012.dkr.ecr.us-east-1.amazonaws.com/agentcore-agent:test",
+          },
+        },
+        "AgentRuntimeName": "private_realtime_ai_agent_agent",
+        "Description": "Strands agent for the Private Real-Time AI Agent (v2, AgentCore)",
+        "EnvironmentVariables": {
+          "AWS_REGION": "us-east-1",
+          "BEDROCK_EMBED_MODEL_ID": "amazon.titan-embed-text-v2:0",
+          "BEDROCK_MODEL_ID": "anthropic.claude-sonnet-4-20250514",
+          "OPENSEARCH_ENDPOINT": {
+            "Fn::ImportValue": "TestData:ExportsOutputFnGetAttOpenSearch587998CDCollectionEndpointE214FF9A",
+          },
+          "OPENSEARCH_INDEX": "agent-knowledge",
+          "OPENSEARCH_TIMEOUT": "30",
+          "RAG_TOP_K": "5",
+        },
+        "LifecycleConfiguration": {},
+        "NetworkConfiguration": {
+          "NetworkMode": "VPC",
+          "NetworkModeConfig": {
+            "SecurityGroups": [
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputFnGetAttVpcEcsTaskSg027E46FCGroupId65A9CB28",
+              },
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3",
+              },
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68",
+              },
+            ],
+          },
+        },
+        "ProtocolConfiguration": "HTTP",
+        "RoleArn": {
+          "Fn::ImportValue": "TestData:ExportsOutputFnGetAttAgentExecutionRole8AD76C36ArnC6916E3F",
+        },
+      },
+      "Type": "AWS::BedrockAgentCore::Runtime",
+    },
+    "AgentCoreRuntimeEndpointlive9B851FAC": {
+      "DependsOn": [
+        "AgentCoreRuntime326B478F",
+      ],
+      "Properties": {
+        "AgentRuntimeId": {
+          "Fn::GetAtt": [
+            "AgentCoreRuntime326B478F",
+            "AgentRuntimeId",
+          ],
+        },
+        "AgentRuntimeVersion": {
+          "Fn::GetAtt": [
+            "AgentCoreRuntime326B478F",
+            "AgentRuntimeVersion",
+          ],
+        },
+        "Description": "Stable invoke endpoint for the ECS proxy",
+        "Name": "live",
+      },
+      "Type": "AWS::BedrockAgentCore::RuntimeEndpoint",
+    },
+    "AgentCoreRuntimeResourcePolicyF7A10542": {
+      "DependsOn": [
+        "AgentCoreRuntimeEndpointlive9B851FAC",
+        "AgentCoreRuntime326B478F",
+        "AgentCoreRuntimeTracesDelivery66417300",
+        "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
+        "AgentCoreRuntimeTracesDeliverySource81E435F9",
+      ],
+      "Properties": {
+        "Policy": {
+          "Fn::Join": [
+            "",
+            [
+              "{"Version":"2012-10-17","Statement":[{"Sid":"DenyInvokeOutsideVpc","Effect":"Deny","Principal":"*","Action":["bedrock-agentcore:InvokeAgentRuntime","bedrock-agentcore:InvokeAgentRuntimeForUser"],"Resource":"",
+              {
+                "Fn::GetAtt": [
+                  "AgentCoreRuntime326B478F",
+                  "AgentRuntimeArn",
+                ],
+              },
+              "","Condition":{"StringNotEquals":{"aws:SourceVpc":"",
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpc8378EB38272D6E3A",
+              },
+              ""}}}]}",
+            ],
+          ],
+        },
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "AgentCoreRuntime326B478F",
+            "AgentRuntimeArn",
+          ],
+        },
+      },
+      "Type": "AWS::BedrockAgentCore::ResourcePolicy",
+    },
+    "AgentCoreRuntimeTracesDelivery66417300": {
+      "DependsOn": [
+        "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
+        "AgentCoreRuntimeTracesDeliverySource81E435F9",
+      ],
+      "Properties": {
+        "DeliveryDestinationArn": {
+          "Fn::GetAtt": [
+            "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
+            "Arn",
+          ],
+        },
+        "DeliverySourceName": {
+          "Ref": "AgentCoreRuntimeTracesDeliverySource81E435F9",
+        },
+      },
+      "Type": "AWS::Logs::Delivery",
+    },
+    "AgentCoreRuntimeTracesDeliveryDest67D5A5B0": {
+      "DependsOn": [
+        "CdkXRayLogsDeliveryPolicyResourcePolicy2C9C91AC",
+      ],
+      "Properties": {
+        "DeliveryDestinationType": "XRAY",
+        "Name": "TestAgentAgentCoreRuntimeTracesDeliveryDest2C2E9BF9",
+      },
+      "Type": "AWS::Logs::DeliveryDestination",
+    },
+    "AgentCoreRuntimeTracesDeliverySource81E435F9": {
+      "Properties": {
+        "LogType": "TRACES",
+        "Name": "TestAgentAgentCoreRuntimeTracesDeliverySourceCE1C08B9",
+        "ResourceArn": {
+          "Fn::GetAtt": [
+            "AgentCoreRuntime326B478F",
+            "AgentRuntimeArn",
+          ],
+        },
+      },
+      "Type": "AWS::Logs::DeliverySource",
+    },
+    "CdkXRayLogsDeliveryPolicyResourcePolicy2C9C91AC": {
+      "Properties": {
+        "PolicyDocument": {
+          "Fn::Join": [
+            "",
+            [
+              "{"Statement":[{"Action":"xray:PutTraceSegments","Condition":{"ForAllValues:ArnLike":{"logs:LogGeneratingResourceArns":["",
+              {
+                "Fn::GetAtt": [
+                  "AgentCoreRuntime326B478F",
+                  "AgentRuntimeArn",
+                ],
+              },
+              ""]},"StringEquals":{"aws:SourceAccount":"123456789012"},"ArnLike":{"aws:SourceArn":"arn:",
+              {
+                "Ref": "AWS::Partition",
+              },
+              ":logs:us-east-1:123456789012:delivery-source:*"}},"Effect":"Allow","Principal":{"Service":"delivery.logs.amazonaws.com"},"Resource":"*"}],"Version":"2012-10-17"}",
+            ],
+          ],
+        },
+        "PolicyName": "TestAgentCdkXRayLogsDeliveryPolicyA578AF16",
+      },
+      "Type": "AWS::XRay::ResourcePolicy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`split-stack snapshots App stack template matches the stored snapshot 1`] = `
+{
+  "Outputs": {
+    "AuthDemoPasswordSecretArnE0B3B142": {
+      "Description": "Secrets Manager ARN holding the generated demo-user password",
+      "Value": {
+        "Ref": "AuthDemoUserPasswordBEFDD57C",
+      },
+    },
+    "AuthDemoUsernameCECC3174": {
+      "Value": "demo",
+    },
+    "AuthUserPoolClientId8216BF9A": {
+      "Value": {
+        "Ref": "AuthUserPoolAppClient1D18298A",
+      },
+    },
+    "AuthUserPoolIdC0605E59": {
+      "Value": {
+        "Ref": "AuthUserPool8115E87F",
+      },
+    },
+    "CloudFrontApiEndpointD14A5992": {
+      "Description": "HTTP invocation endpoint served through CloudFront",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Fn::GetAtt": [
+                "CloudFrontDistributionEAB06B35",
+                "DomainName",
+              ],
+            },
+            "/api/invocations",
+          ],
+        ],
+      },
+    },
+    "CloudFrontDistributionDomainNameFAAF3EEF": {
+      "Description": "CloudFront distribution HTTPS URL (sole public entry point)",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Fn::GetAtt": [
+                "CloudFrontDistributionEAB06B35",
+                "DomainName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+    "CloudFrontWebSocketEndpoint2858DB4B": {
+      "Description": "WebSocket streaming endpoint served through CloudFront",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "wss://",
+            {
+              "Fn::GetAtt": [
+                "CloudFrontDistributionEAB06B35",
+                "DomainName",
+              ],
+            },
+            "/ws/",
+          ],
+        ],
+      },
+    },
+    "DemoPasswordSecretArn": {
+      "Description": "Secrets Manager ARN with the generated demo-user password",
+      "Value": {
+        "Ref": "AuthDemoUserPasswordBEFDD57C",
+      },
+    },
+    "DemoUsername": {
+      "Value": "demo",
+    },
+    "DistributionDomainName": {
+      "Description": "CloudFront distribution domain name (sole public entry point)",
+      "Value": {
+        "Fn::GetAtt": [
+          "CloudFrontDistributionEAB06B35",
+          "DomainName",
+        ],
+      },
+    },
+    "SiteUrl": {
+      "Description": "The public site URL (login required)",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Fn::GetAtt": [
+                "CloudFrontDistributionEAB06B35",
+                "DomainName",
+              ],
+            },
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
+      "DependsOn": [
+        "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "56f7467bbde8a5efebcf57ae9e460027607099bab9f844669dcf5d800172ee5a.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Alb16C2F182": {
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "idle_timeout.timeout_seconds",
+            "Value": "60",
+          },
+        ],
+        "Scheme": "internal",
+        "SecurityGroups": [
+          {
+            "Fn::ImportValue": "TestNetwork:ExportsOutputFnGetAttVpcAlbSgBAB02237GroupIdD437DBAC",
+          },
+        ],
+        "Subnets": [
+          {
+            "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3",
+          },
+          {
+            "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "AlbHttp80477A9EFB": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "AlbTargetGroup3E290A92",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "Alb16C2F182",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "AlbTargetGroup3E290A92": {
+      "Properties": {
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckPath": "/health",
+        "HealthCheckPort": "8080",
+        "HealthCheckProtocol": "HTTP",
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 3,
+        "Matcher": {
+          "HttpCode": "200",
+        },
+        "Port": 8080,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "300",
+          },
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 3,
+        "VpcId": {
+          "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpc8378EB38272D6E3A",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "AlbVpcOriginIngressB76FA473": {
+      "Properties": {
+        "Description": "Allow CloudFront VPC Origin service SG to reach the internal ALB on TCP 80",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::ImportValue": "TestNetwork:ExportsOutputFnGetAttVpcAlbSgBAB02237GroupIdD437DBAC",
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "AlbVpcOriginServiceSgLookup61078017",
+            "SecurityGroups.0.GroupId",
+          ],
+        },
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "AlbVpcOriginServiceSgLookup61078017": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AlbVpcOriginServiceSgLookupCustomResourcePolicy14D26FDE",
+        "CloudFrontDistributionOrigin1VpcOriginC965C4FD",
+        "CloudFrontDistributionEAB06B35",
+      ],
+      "Properties": {
+        "Create": "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+        "InstallLatestAwsSdk": true,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+      },
+      "Type": "Custom::AWS",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AlbVpcOriginServiceSgLookupCustomResourcePolicy14D26FDE": {
+      "DependsOn": [
+        "CloudFrontDistributionOrigin1VpcOriginC965C4FD",
+        "CloudFrontDistributionEAB06B35",
+      ],
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ec2:DescribeSecurityGroups",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AlbVpcOriginServiceSgLookupCustomResourcePolicy14D26FDE",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AuthDemoUserED5AC09B": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Email": "demo@agent.invalid",
+        "Revision": "2",
+        "SecretArn": {
+          "Ref": "AuthDemoUserPasswordBEFDD57C",
+        },
+        "SecretVersionId": {
+          "Ref": "AuthDemoUserPasswordBEFDD57C",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AuthDemoUserProviderframeworkonEvent73929F42",
+            "Arn",
+          ],
+        },
+        "UserPoolId": {
+          "Ref": "AuthUserPool8115E87F",
+        },
+        "Username": "demo",
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuthDemoUserPasswordBEFDD57C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "Auto-generated password for the demo Cognito user",
+        "GenerateSecretString": {
+          "ExcludeCharacters": ""'\`\\/@%&<>|;: {}[]()",
+          "ExcludePunctuation": false,
+          "GenerateStringKey": "password",
+          "IncludeSpace": false,
+          "PasswordLength": 20,
+          "RequireEachIncludedType": true,
+          "SecretStringTemplate": "{"username":"demo"}",
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuthDemoUserProviderframeworkonEvent73929F42": {
+      "DependsOn": [
+        "AuthDemoUserProviderframeworkonEventServiceRoleDefaultPolicy69AF59DC",
+        "AuthDemoUserProviderframeworkonEventServiceRoleAED9AD98",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onEvent (TestApp/Auth/DemoUserProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AuthDemoUserProvisionerFn7746F341",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.onEvent",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AuthDemoUserProviderframeworkonEventServiceRoleAED9AD98",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AuthDemoUserProviderframeworkonEventLogRetentionCDE0C87D": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AuthDemoUserProviderframeworkonEvent73929F42",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AuthDemoUserProviderframeworkonEventServiceRoleAED9AD98": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AuthDemoUserProviderframeworkonEventServiceRoleDefaultPolicy69AF59DC": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AuthDemoUserProvisionerFn7746F341",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AuthDemoUserProvisionerFn7746F341",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AuthDemoUserProvisionerFn7746F341",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AuthDemoUserProviderframeworkonEventServiceRoleDefaultPolicy69AF59DC",
+        "Roles": [
+          {
+            "Ref": "AuthDemoUserProviderframeworkonEventServiceRoleAED9AD98",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AuthDemoUserProvisionerFn7746F341": {
+      "DependsOn": [
+        "AuthDemoUserProvisionerFnServiceRoleDefaultPolicy01F5C4EF",
+        "AuthDemoUserProvisionerFnServiceRoleB87D066F",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+import json
+import urllib.request
+
+import boto3
+
+
+def _send(event, context, status, reason=""):
+    body = json.dumps({
+        "Status": status,
+        "Reason": reason or f"see CloudWatch log stream {context.log_stream_name}",
+        "PhysicalResourceId": event.get("PhysicalResourceId") or context.log_stream_name,
+        "StackId": event["StackId"],
+        "RequestId": event["RequestId"],
+        "LogicalResourceId": event["LogicalResourceId"],
+        "Data": {},
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        event["ResponseURL"], data=body, method="PUT",
+        headers={"content-type": "", "content-length": str(len(body))},
+    )
+    urllib.request.urlopen(req)  # noqa: S310 - the URL is the CFN-provided presigned S3 URL
+
+
+def handler(event, context):
+    try:
+        request_type = event["RequestType"]
+        if request_type == "Delete":
+            _send(event, context, "SUCCESS", "delete is a no-op")
+            return
+
+        props = event["ResourceProperties"]
+        user_pool_id = props["UserPoolId"]
+        username = props["Username"]
+        email = props["Email"]
+        secret_arn = props["SecretArn"]
+
+        secret_json = boto3.client("secretsmanager").get_secret_value(
+            SecretId=secret_arn
+        )["SecretString"]
+        password = json.loads(secret_json)["password"]
+
+        idp = boto3.client("cognito-idp")
+        try:
+            idp.admin_create_user(
+                UserPoolId=user_pool_id,
+                Username=username,
+                MessageAction="SUPPRESS",
+                UserAttributes=[
+                    {"Name": "email", "Value": email},
+                    {"Name": "email_verified", "Value": "true"},
+                ],
+            )
+        except idp.exceptions.UsernameExistsException:
+            pass  # idempotent: user already exists
+
+        # Set the SAME password as a permanent password (no FORCE_CHANGE flow).
+        idp.admin_set_user_password(
+            UserPoolId=user_pool_id,
+            Username=username,
+            Password=password,
+            Permanent=True,
+        )
+        _send(event, context, "SUCCESS", f"provisioned demo user {username}")
+    except Exception as exc:  # noqa: BLE001 - report any failure back to CFN
+        _send(event, context, "FAILED", str(exc))
+",
+        },
+        "Description": "Creates the demo Cognito user and sets its password from Secrets Manager (single source of truth)",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AuthDemoUserProvisionerFnServiceRoleB87D066F",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AuthDemoUserProvisionerFnLogRetention10ACDF3A": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AuthDemoUserProvisionerFn7746F341",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AuthDemoUserProvisionerFnServiceRoleB87D066F": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AuthDemoUserProvisionerFnServiceRoleDefaultPolicy01F5C4EF": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "AuthDemoUserPasswordBEFDD57C",
+              },
+            },
+            {
+              "Action": [
+                "cognito-idp:AdminCreateUser",
+                "cognito-idp:AdminSetUserPassword",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AuthUserPool8115E87F",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AuthDemoUserProvisionerFnServiceRoleDefaultPolicy01F5C4EF",
+        "Roles": [
+          {
+            "Ref": "AuthDemoUserProvisionerFnServiceRoleB87D066F",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AuthUserPool8115E87F": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1,
+            },
+          ],
+        },
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": true,
+        },
+        "AliasAttributes": [
+          "email",
+        ],
+        "AutoVerifiedAttributes": [
+          "email",
+        ],
+        "EmailVerificationMessage": "The verification code to your new account is {####}",
+        "EmailVerificationSubject": "Verify your new account",
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 12,
+            "RequireLowercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true,
+            "RequireUppercase": true,
+          },
+        },
+        "Schema": [
+          {
+            "Mutable": true,
+            "Name": "email",
+            "Required": true,
+          },
+        ],
+        "SmsVerificationMessage": "The verification code to your new account is {####}",
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_CODE",
+          "EmailMessage": "The verification code to your new account is {####}",
+          "EmailSubject": "Verify your new account",
+          "SmsMessage": "The verification code to your new account is {####}",
+        },
+      },
+      "Type": "AWS::Cognito::UserPool",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AuthUserPoolAppClient1D18298A": {
+      "Properties": {
+        "AccessTokenValidity": 480,
+        "AllowedOAuthFlows": [
+          "implicit",
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          "profile",
+          "phone",
+          "email",
+          "openid",
+          "aws.cognito.signin.user.admin",
+        ],
+        "CallbackURLs": [
+          "https://example.com",
+        ],
+        "ExplicitAuthFlows": [
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": false,
+        "IdTokenValidity": 480,
+        "PreventUserExistenceErrors": "ENABLED",
+        "RefreshTokenValidity": 10080,
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "TokenValidityUnits": {
+          "AccessToken": "minutes",
+          "IdToken": "minutes",
+          "RefreshToken": "minutes",
+        },
+        "UserPoolId": {
+          "Ref": "AuthUserPool8115E87F",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "CloudFrontDistributionEAB06B35": {
+      "Properties": {
+        "DistributionConfig": {
+          "CacheBehaviors": [
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PUT",
+                "PATCH",
+                "POST",
+                "DELETE",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "Compress": true,
+              "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+              "PathPattern": "/ws/*",
+              "TargetOriginId": "TestAppCloudFrontDistributionOrigin10A7F3319",
+              "ViewerProtocolPolicy": "https-only",
+            },
+            {
+              "AllowedMethods": [
+                "GET",
+                "HEAD",
+                "OPTIONS",
+                "PUT",
+                "PATCH",
+                "POST",
+                "DELETE",
+              ],
+              "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+              "Compress": true,
+              "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+              "PathPattern": "/api/*",
+              "TargetOriginId": "TestAppCloudFrontDistributionOrigin10A7F3319",
+              "ViewerProtocolPolicy": "https-only",
+            },
+          ],
+          "Comment": "Private Real-Time AI Agent - sole public entry point",
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PUT",
+              "PATCH",
+              "POST",
+              "DELETE",
+            ],
+            "CachePolicyId": "4135ea2d-6df8-44a3-9df3-4b5a84be39ad",
+            "Compress": true,
+            "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+            "ResponseHeadersPolicyId": "67f7725c-6f97-4210-82d7-5512b31e9d03",
+            "TargetOriginId": "TestAppCloudFrontDistributionOrigin10A7F3319",
+            "ViewerProtocolPolicy": "redirect-to-https",
+          },
+          "Enabled": true,
+          "HttpVersion": "http2",
+          "IPV6Enabled": true,
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "Alb16C2F182",
+                  "DNSName",
+                ],
+              },
+              "Id": "TestAppCloudFrontDistributionOrigin10A7F3319",
+              "VpcOriginConfig": {
+                "OriginKeepaliveTimeout": 5,
+                "OriginReadTimeout": 60,
+                "VpcOriginId": {
+                  "Fn::GetAtt": [
+                    "CloudFrontDistributionOrigin1VpcOriginC965C4FD",
+                    "Id",
+                  ],
+                },
+              },
+            },
+          ],
+          "PriceClass": "PriceClass_100",
+          "WebACLId": "arn:aws:wafv2:us-east-1:123456789012:global/webacl/PrivateRealtimeAiAgentWebAcl/abcd1234-5678-90ab-cdef-1234567890ab",
+        },
+      },
+      "Type": "AWS::CloudFront::Distribution",
+    },
+    "CloudFrontDistributionOrigin1VpcOriginC965C4FD": {
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Arn": {
+            "Ref": "Alb16C2F182",
+          },
+          "HTTPPort": 80,
+          "Name": "TestAppCloudFrontDistributionOrigin1VpcOrigin109D87FD",
+          "OriginProtocolPolicy": "http-only",
+          "OriginSSLProtocols": [
+            "TLSv1.2",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFront::VpcOrigin",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+      "DependsOn": [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": [
+          {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyCluster29DC0C5A": {
+      "Properties": {
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "disabled",
+          },
+        ],
+      },
+      "Type": "AWS::ECS::Cluster",
+    },
+    "ProxyExecutionRole4BF4E10B": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "ECS task execution role (ECR pull + CloudWatch Logs)",
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyExecutionRoleDefaultPolicyBDDAE8B4": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyLogGroup29A2C131",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyExecutionRoleDefaultPolicyBDDAE8B4",
+        "Roles": [
+          {
+            "Ref": "ProxyExecutionRole4BF4E10B",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyLogGroup29A2C131": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ProxyService4F705126": {
+      "DependsOn": [
+        "AlbHttp80477A9EFB",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ProxyCluster29DC0C5A",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "DeploymentController": {
+          "Type": "ECS",
+        },
+        "DesiredCount": 2,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "ProxyContainer",
+            "ContainerPort": 8080,
+            "TargetGroupArn": {
+              "Ref": "AlbTargetGroup3E290A92",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputFnGetAttVpcEcsTaskSg027E46FCGroupId65A9CB28",
+              },
+            ],
+            "Subnets": [
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3",
+              },
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68",
+              },
+            ],
+          },
+        },
+        "TaskDefinition": {
+          "Ref": "ProxyTaskDefinition94C82185",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "ProxyTaskDefinition94C82185": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "PORT",
+                "Value": "8080",
+              },
+              {
+                "Name": "AWS_REGION",
+                "Value": "us-east-1",
+              },
+              {
+                "Name": "AGENT_RUNTIME_ARN",
+                "Value": {
+                  "Fn::ImportValue": "TestAgent:ExportsOutputFnGetAttAgentCoreRuntime326B478FAgentRuntimeArn750B14A8",
+                },
+              },
+              {
+                "Name": "COGNITO_USER_POOL_ID",
+                "Value": {
+                  "Ref": "AuthUserPool8115E87F",
+                },
+              },
+              {
+                "Name": "COGNITO_CLIENT_ID",
+                "Value": {
+                  "Ref": "AuthUserPoolAppClient1D18298A",
+                },
+              },
+              {
+                "Name": "UPLOAD_BUCKET",
+                "Value": {
+                  "Fn::ImportValue": "TestData:ExportsOutputRefUploadsBucketC4B27CC7CCC94A6B",
+                },
+              },
+              {
+                "Name": "OPENSEARCH_ENDPOINT",
+                "Value": {
+                  "Fn::ImportValue": "TestData:ExportsOutputFnGetAttOpenSearch587998CDCollectionEndpointE214FF9A",
+                },
+              },
+              {
+                "Name": "OPENSEARCH_INDEX",
+                "Value": "agent-knowledge",
+              },
+              {
+                "Name": "BEDROCK_EMBED_MODEL_ID",
+                "Value": "amazon.titan-embed-text-v2:0",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget -q -O- http://localhost:8080/health || exit 1",
+              ],
+              "Interval": 30,
+              "Retries": 3,
+              "StartPeriod": 60,
+              "Timeout": 5,
+            },
+            "Image": "public.ecr.aws/docker/library/python:3.12-slim",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ProxyLogGroup29A2C131",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "proxy",
+              },
+            },
+            "Name": "ProxyContainer",
+            "PortMappings": [
+              {
+                "ContainerPort": 8080,
+                "Protocol": "tcp",
+              },
+            ],
+          },
+        ],
+        "Cpu": "512",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ProxyExecutionRole4BF4E10B",
+            "Arn",
+          ],
+        },
+        "Family": "TestAppProxyTaskDefinition92B3A9F6",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+          "OperatingSystemFamily": "LINUX",
+        },
+        "TaskRoleArn": {
+          "Fn::ImportValue": "TestData:ExportsOutputFnGetAttProxyTaskRoleE745B8C2Arn120E53BA",
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`split-stack snapshots Build stack template matches the stored snapshot 1`] = `
+{
+  "Outputs": {
+    "AgentImageUri": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            {
+              "Fn::Select": [
+                4,
+                {
+                  "Fn::Split": [
+                    ":",
+                    {
+                      "Fn::GetAtt": [
+                        "AgentImageRepoCF614A63",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            ".dkr.ecr.",
+            {
+              "Fn::Select": [
+                3,
+                {
+                  "Fn::Split": [
+                    ":",
+                    {
+                      "Fn::GetAtt": [
+                        "AgentImageRepoCF614A63",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "AgentImageRepoCF614A63",
+            },
+            ":441134d207e32e14ff9f098287d42eecb3af95204040b5e975f417801634f11d",
+          ],
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170": {
+      "Export": {
+        "Name": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AgentImageRepoCF614A63",
+          "Arn",
+        ],
+      },
+    },
+    "ProxyImageUri": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            {
+              "Fn::Select": [
+                4,
+                {
+                  "Fn::Split": [
+                    ":",
+                    {
+                      "Fn::GetAtt": [
+                        "ProxyImageRepoBB30DFC4",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            ".dkr.ecr.",
+            {
+              "Fn::Select": [
+                3,
+                {
+                  "Fn::Split": [
+                    ":",
+                    {
+                      "Fn::GetAtt": [
+                        "ProxyImageRepoBB30DFC4",
+                        "Arn",
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix",
+            },
+            "/",
+            {
+              "Ref": "ProxyImageRepoBB30DFC4",
+            },
+            ":4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+          ],
+        ],
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AgentImageBuild8DE30D9A": {
+      "Properties": {
+        "Artifacts": {
+          "Type": "NO_ARTIFACTS",
+        },
+        "Cache": {
+          "Type": "NO_CACHE",
+        },
+        "EncryptionKey": "alias/aws/s3",
+        "Environment": {
+          "ComputeType": "BUILD_GENERAL1_LARGE",
+          "EnvironmentVariables": [
+            {
+              "Name": "REPO_URI",
+              "Type": "PLAINTEXT",
+              "Value": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::Select": [
+                        4,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "AgentImageRepoCF614A63",
+                                "Arn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    ".dkr.ecr.",
+                    {
+                      "Fn::Select": [
+                        3,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "AgentImageRepoCF614A63",
+                                "Arn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    ".",
+                    {
+                      "Ref": "AWS::URLSuffix",
+                    },
+                    "/",
+                    {
+                      "Ref": "AgentImageRepoCF614A63",
+                    },
+                  ],
+                ],
+              },
+            },
+            {
+              "Name": "IMAGE_TAG",
+              "Type": "PLAINTEXT",
+              "Value": "441134d207e32e14ff9f098287d42eecb3af95204040b5e975f417801634f11d",
+            },
+            {
+              "Name": "TARGET_PLATFORM",
+              "Type": "PLAINTEXT",
+              "Value": "linux/arm64",
+            },
+            {
+              "Name": "AWS_DEFAULT_REGION",
+              "Type": "PLAINTEXT",
+              "Value": "us-east-1",
+            },
+          ],
+          "Image": "aws/codebuild/amazonlinux2-aarch64-standard:3.0",
+          "ImagePullCredentialsType": "CODEBUILD",
+          "PrivilegedMode": true,
+          "Type": "ARM_CONTAINER",
+        },
+        "Name": "private-realtime-ai-agent-agent-agent-build",
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "AgentImageBuildRole3E3968FA",
+            "Arn",
+          ],
+        },
+        "Source": {
+          "BuildSpec": "{
+  "version": "0.2",
+  "phases": {
+    "pre_build": {
+      "commands": [
+        "echo \\"Logging in to Amazon ECR...\\"",
+        "aws ecr get-login-password --region \\"$AWS_DEFAULT_REGION\\" | docker login --username AWS --password-stdin \\"$(echo \\"$REPO_URI\\" | cut -d/ -f1)\\""
+      ]
+    },
+    "build": {
+      "commands": [
+        "echo \\"Building image $REPO_URI:$IMAGE_TAG for $TARGET_PLATFORM...\\"",
+        "docker build --platform \\"$TARGET_PLATFORM\\" -t \\"$REPO_URI:$IMAGE_TAG\\" ."
+      ]
+    },
+    "post_build": {
+      "commands": [
+        "echo \\"Pushing image...\\"",
+        "docker push \\"$REPO_URI:$IMAGE_TAG\\""
+      ]
+    }
+  }
+}",
+          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/441134d207e32e14ff9f098287d42eecb3af95204040b5e975f417801634f11d.zip",
+          "Type": "S3",
+        },
+        "TimeoutInMinutes": 30,
+      },
+      "Type": "AWS::CodeBuild::Project",
+    },
+    "AgentImageBuildProviderframeworkisCompleteA31EED3C": {
+      "DependsOn": [
+        "AgentImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9E0CD87C",
+        "AgentImageBuildProviderframeworkisCompleteServiceRole042CCB7C",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - isComplete (TestBuild/AgentImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerIsCompleteFn1CAE8088",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerOnEventFn5732D651",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.isComplete",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AgentImageBuildProviderframeworkisCompleteServiceRole042CCB7C",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AgentImageBuildProviderframeworkisCompleteLogRetention7EE2754F": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AgentImageBuildProviderframeworkisCompleteA31EED3C",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AgentImageBuildProviderframeworkisCompleteServiceRole042CCB7C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9E0CD87C": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerOnEventFn5732D651",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerOnEventFn5732D651",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerOnEventFn5732D651",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerIsCompleteFn1CAE8088",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerIsCompleteFn1CAE8088",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerIsCompleteFn1CAE8088",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9E0CD87C",
+        "Roles": [
+          {
+            "Ref": "AgentImageBuildProviderframeworkisCompleteServiceRole042CCB7C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageBuildProviderframeworkonEventC74F858F": {
+      "DependsOn": [
+        "AgentImageBuildProviderframeworkonEventServiceRoleDefaultPolicy7B9B2901",
+        "AgentImageBuildProviderframeworkonEventServiceRole1A6E0575",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onEvent (TestBuild/AgentImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerIsCompleteFn1CAE8088",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerOnEventFn5732D651",
+                "Arn",
+              ],
+            },
+            "WAITER_STATE_MACHINE_ARN": {
+              "Ref": "AgentImageBuildProviderwaiterstatemachineAE35FF44",
+            },
+          },
+        },
+        "Handler": "framework.onEvent",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AgentImageBuildProviderframeworkonEventServiceRole1A6E0575",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AgentImageBuildProviderframeworkonEventLogRetention78E24921": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AgentImageBuildProviderframeworkonEventC74F858F",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AgentImageBuildProviderframeworkonEventServiceRole1A6E0575": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageBuildProviderframeworkonEventServiceRoleDefaultPolicy7B9B2901": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerOnEventFn5732D651",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerOnEventFn5732D651",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerOnEventFn5732D651",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerIsCompleteFn1CAE8088",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerIsCompleteFn1CAE8088",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerIsCompleteFn1CAE8088",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "states:StartExecution",
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "AgentImageBuildProviderwaiterstatemachineAE35FF44",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageBuildProviderframeworkonEventServiceRoleDefaultPolicy7B9B2901",
+        "Roles": [
+          {
+            "Ref": "AgentImageBuildProviderframeworkonEventServiceRole1A6E0575",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageBuildProviderframeworkonTimeout1722823A": {
+      "DependsOn": [
+        "AgentImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicyB9257D71",
+        "AgentImageBuildProviderframeworkonTimeoutServiceRole3D8E2A5D",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onTimeout (TestBuild/AgentImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerIsCompleteFn1CAE8088",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "AgentImageTriggerOnEventFn5732D651",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.onTimeout",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "AgentImageBuildProviderframeworkonTimeoutServiceRole3D8E2A5D",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AgentImageBuildProviderframeworkonTimeoutLogRetentionB7E03188": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AgentImageBuildProviderframeworkonTimeout1722823A",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AgentImageBuildProviderframeworkonTimeoutServiceRole3D8E2A5D": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicyB9257D71": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerOnEventFn5732D651",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerOnEventFn5732D651",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerOnEventFn5732D651",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageTriggerIsCompleteFn1CAE8088",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageTriggerIsCompleteFn1CAE8088",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageTriggerIsCompleteFn1CAE8088",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicyB9257D71",
+        "Roles": [
+          {
+            "Ref": "AgentImageBuildProviderframeworkonTimeoutServiceRole3D8E2A5D",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageBuildProviderwaiterstatemachineAE35FF44": {
+      "DependsOn": [
+        "AgentImageBuildProviderwaiterstatemachineRoleDefaultPolicyCA1173B2",
+        "AgentImageBuildProviderwaiterstatemachineRole520484EF",
+      ],
+      "Properties": {
+        "DefinitionString": {
+          "Fn::Join": [
+            "",
+            [
+              "{"StartAt":"framework-isComplete-task","States":{"framework-isComplete-task":{"End":true,"Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":15,"MaxAttempts":160,"BackoffRate":1}],"Catch":[{"ErrorEquals":["States.ALL"],"Next":"framework-onTimeout-task"}],"Type":"Task","Resource":"",
+              {
+                "Fn::GetAtt": [
+                  "AgentImageBuildProviderframeworkisCompleteA31EED3C",
+                  "Arn",
+                ],
+              },
+              ""},"framework-onTimeout-task":{"End":true,"Type":"Task","Resource":"",
+              {
+                "Fn::GetAtt": [
+                  "AgentImageBuildProviderframeworkonTimeout1722823A",
+                  "Arn",
+                ],
+              },
+              ""}}}",
+            ],
+          ],
+        },
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "AgentImageBuildProviderwaiterstatemachineRole520484EF",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::StepFunctions::StateMachine",
+    },
+    "AgentImageBuildProviderwaiterstatemachineRole520484EF": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageBuildProviderwaiterstatemachineRoleDefaultPolicyCA1173B2": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageBuildProviderframeworkisCompleteA31EED3C",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageBuildProviderframeworkisCompleteA31EED3C",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "AgentImageBuildProviderframeworkonTimeout1722823A",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "AgentImageBuildProviderframeworkonTimeout1722823A",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageBuildProviderwaiterstatemachineRoleDefaultPolicyCA1173B2",
+        "Roles": [
+          {
+            "Ref": "AgentImageBuildProviderwaiterstatemachineRole520484EF",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageBuildRole3E3968FA": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "codebuild.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageBuildRoleDefaultPolicy008822E9": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/441134d207e32e14ff9f098287d42eecb3af95204040b5e975f417801634f11d.zip",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:us-east-1:123456789012:log-group:/aws/codebuild/",
+                      {
+                        "Ref": "AgentImageBuild8DE30D9A",
+                      },
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:us-east-1:123456789012:log-group:/aws/codebuild/",
+                      {
+                        "Ref": "AgentImageBuild8DE30D9A",
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "codebuild:CreateReportGroup",
+                "codebuild:CreateReport",
+                "codebuild:UpdateReport",
+                "codebuild:BatchPutTestCases",
+                "codebuild:BatchPutCodeCoverages",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":codebuild:us-east-1:123456789012:report-group/",
+                    {
+                      "Ref": "AgentImageBuild8DE30D9A",
+                    },
+                    "-*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:CompleteLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:InitiateLayerUpload",
+                "ecr:PutImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageRepoCF614A63",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageBuildRoleDefaultPolicy008822E9",
+        "Roles": [
+          {
+            "Ref": "AgentImageBuildRole3E3968FA",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageBuildTrigger6347BF15": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "AgentImageBuild8DE30D9A",
+        "AgentImageBuildRoleDefaultPolicy008822E9",
+        "AgentImageBuildRole3E3968FA",
+      ],
+      "Properties": {
+        "ImageTag": "441134d207e32e14ff9f098287d42eecb3af95204040b5e975f417801634f11d",
+        "ProjectName": {
+          "Ref": "AgentImageBuild8DE30D9A",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AgentImageBuildProviderframeworkonEventC74F858F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AgentImageRepoCF614A63": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "EmptyOnDelete": true,
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true,
+        },
+        "RepositoryName": "private-realtime-ai-agent-agent/agent",
+      },
+      "Type": "AWS::ECR::Repository",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "AgentImageTriggerIsCompleteFn1CAE8088": {
+      "DependsOn": [
+        "AgentImageTriggerIsCompleteFnServiceRoleDefaultPolicy863FBE9A",
+        "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+import boto3
+
+_TERMINAL_OK = "SUCCEEDED"
+_TERMINAL_BAD = ("FAILED", "FAULT", "TIMED_OUT", "STOPPED")
+
+
+def on_event(event, context):
+    request_type = event["RequestType"]
+    if request_type == "Delete":
+        return {"PhysicalResourceId": event.get("PhysicalResourceId") or "image-build"}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = boto3.client("codebuild").start_build(projectName=project)["build"]["id"]
+    print(f"started build {build_id} for project {project}")
+    # Carry the build id forward to is_complete via Data.
+    return {"PhysicalResourceId": "image-build", "Data": {"BuildId": build_id}}
+
+
+def _latest_build_id(project):
+    ids = boto3.client("codebuild").list_builds_for_project(projectName=project).get("ids", [])
+    return ids[0] if ids else None
+
+
+def is_complete(event, context):
+    if event["RequestType"] == "Delete":
+        return {"IsComplete": True}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = (event.get("Data") or {}).get("BuildId") or _latest_build_id(project)
+    if not build_id:
+        return {"IsComplete": False}
+
+    cb = boto3.client("codebuild")
+    builds = cb.batch_get_builds(ids=[build_id]).get("builds", [])
+    if not builds:
+        return {"IsComplete": False}
+    status = builds[0].get("buildStatus", "IN_PROGRESS")
+    print(f"build {build_id} status={status}")
+    if status == _TERMINAL_OK:
+        return {"IsComplete": True}
+    if status in _TERMINAL_BAD:
+        raise Exception(f"image build {build_id} did not succeed (status {status}); see CodeBuild logs")
+    return {"IsComplete": False}
+",
+        },
+        "Description": "Polls the image CodeBuild until done (isComplete)",
+        "Handler": "index.is_complete",
+        "Role": {
+          "Fn::GetAtt": [
+            "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AgentImageTriggerIsCompleteFnLogRetention0AD00035": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AgentImageTriggerIsCompleteFn1CAE8088",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageTriggerIsCompleteFnServiceRoleDefaultPolicy863FBE9A": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds",
+                "codebuild:ListBuildsForProject",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageBuild8DE30D9A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageTriggerIsCompleteFnServiceRoleDefaultPolicy863FBE9A",
+        "Roles": [
+          {
+            "Ref": "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "AgentImageTriggerOnEventFn5732D651": {
+      "DependsOn": [
+        "AgentImageTriggerOnEventFnServiceRoleDefaultPolicy86D66E86",
+        "AgentImageTriggerOnEventFnServiceRoleB57C491E",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+import boto3
+
+_TERMINAL_OK = "SUCCEEDED"
+_TERMINAL_BAD = ("FAILED", "FAULT", "TIMED_OUT", "STOPPED")
+
+
+def on_event(event, context):
+    request_type = event["RequestType"]
+    if request_type == "Delete":
+        return {"PhysicalResourceId": event.get("PhysicalResourceId") or "image-build"}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = boto3.client("codebuild").start_build(projectName=project)["build"]["id"]
+    print(f"started build {build_id} for project {project}")
+    # Carry the build id forward to is_complete via Data.
+    return {"PhysicalResourceId": "image-build", "Data": {"BuildId": build_id}}
+
+
+def _latest_build_id(project):
+    ids = boto3.client("codebuild").list_builds_for_project(projectName=project).get("ids", [])
+    return ids[0] if ids else None
+
+
+def is_complete(event, context):
+    if event["RequestType"] == "Delete":
+        return {"IsComplete": True}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = (event.get("Data") or {}).get("BuildId") or _latest_build_id(project)
+    if not build_id:
+        return {"IsComplete": False}
+
+    cb = boto3.client("codebuild")
+    builds = cb.batch_get_builds(ids=[build_id]).get("builds", [])
+    if not builds:
+        return {"IsComplete": False}
+    status = builds[0].get("buildStatus", "IN_PROGRESS")
+    print(f"build {build_id} status={status}")
+    if status == _TERMINAL_OK:
+        return {"IsComplete": True}
+    if status in _TERMINAL_BAD:
+        raise Exception(f"image build {build_id} did not succeed (status {status}); see CodeBuild logs")
+    return {"IsComplete": False}
+",
+        },
+        "Description": "Starts the image CodeBuild on deploy (onEvent)",
+        "Handler": "index.on_event",
+        "Role": {
+          "Fn::GetAtt": [
+            "AgentImageTriggerOnEventFnServiceRoleB57C491E",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AgentImageTriggerOnEventFnLogRetention4537C011": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AgentImageTriggerOnEventFn5732D651",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "AgentImageTriggerOnEventFnServiceRoleB57C491E": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentImageTriggerOnEventFnServiceRoleDefaultPolicy86D66E86": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds",
+                "codebuild:ListBuildsForProject",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "AgentImageBuild8DE30D9A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentImageTriggerOnEventFnServiceRoleDefaultPolicy86D66E86",
+        "Roles": [
+          {
+            "Ref": "AgentImageTriggerOnEventFnServiceRoleB57C491E",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+      "DependsOn": [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": [
+          {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuild77DEACC0": {
+      "Properties": {
+        "Artifacts": {
+          "Type": "NO_ARTIFACTS",
+        },
+        "Cache": {
+          "Type": "NO_CACHE",
+        },
+        "EncryptionKey": "alias/aws/s3",
+        "Environment": {
+          "ComputeType": "BUILD_GENERAL1_SMALL",
+          "EnvironmentVariables": [
+            {
+              "Name": "REPO_URI",
+              "Type": "PLAINTEXT",
+              "Value": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::Select": [
+                        4,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "ProxyImageRepoBB30DFC4",
+                                "Arn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    ".dkr.ecr.",
+                    {
+                      "Fn::Select": [
+                        3,
+                        {
+                          "Fn::Split": [
+                            ":",
+                            {
+                              "Fn::GetAtt": [
+                                "ProxyImageRepoBB30DFC4",
+                                "Arn",
+                              ],
+                            },
+                          ],
+                        },
+                      ],
+                    },
+                    ".",
+                    {
+                      "Ref": "AWS::URLSuffix",
+                    },
+                    "/",
+                    {
+                      "Ref": "ProxyImageRepoBB30DFC4",
+                    },
+                  ],
+                ],
+              },
+            },
+            {
+              "Name": "IMAGE_TAG",
+              "Type": "PLAINTEXT",
+              "Value": "4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+            },
+            {
+              "Name": "TARGET_PLATFORM",
+              "Type": "PLAINTEXT",
+              "Value": "linux/amd64",
+            },
+            {
+              "Name": "AWS_DEFAULT_REGION",
+              "Type": "PLAINTEXT",
+              "Value": "us-east-1",
+            },
+          ],
+          "Image": "aws/codebuild/amazonlinux2-x86_64-standard:5.0",
+          "ImagePullCredentialsType": "CODEBUILD",
+          "PrivilegedMode": true,
+          "Type": "LINUX_CONTAINER",
+        },
+        "Name": "private-realtime-ai-agent-agent-proxy-build",
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildRole70F6F0F8",
+            "Arn",
+          ],
+        },
+        "Source": {
+          "BuildSpec": "{
+  "version": "0.2",
+  "phases": {
+    "pre_build": {
+      "commands": [
+        "echo \\"Logging in to Amazon ECR...\\"",
+        "aws ecr get-login-password --region \\"$AWS_DEFAULT_REGION\\" | docker login --username AWS --password-stdin \\"$(echo \\"$REPO_URI\\" | cut -d/ -f1)\\""
+      ]
+    },
+    "build": {
+      "commands": [
+        "echo \\"Building image $REPO_URI:$IMAGE_TAG for $TARGET_PLATFORM...\\"",
+        "docker build --platform \\"$TARGET_PLATFORM\\" -t \\"$REPO_URI:$IMAGE_TAG\\" ."
+      ]
+    },
+    "post_build": {
+      "commands": [
+        "echo \\"Pushing image...\\"",
+        "docker push \\"$REPO_URI:$IMAGE_TAG\\""
+      ]
+    }
+  }
+}",
+          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a.zip",
+          "Type": "S3",
+        },
+        "TimeoutInMinutes": 30,
+      },
+      "Type": "AWS::CodeBuild::Project",
+    },
+    "ProxyImageBuildProviderframeworkisComplete53D3FA27": {
+      "DependsOn": [
+        "ProxyImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9DB7DFC9",
+        "ProxyImageBuildProviderframeworkisCompleteServiceRole57A24358",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - isComplete (TestBuild/ProxyImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerIsCompleteFn3E4FD989",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerOnEventFnE19B0B40",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.isComplete",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildProviderframeworkisCompleteServiceRole57A24358",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ProxyImageBuildProviderframeworkisCompleteLogRetentionF72C3F8A": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "ProxyImageBuildProviderframeworkisComplete53D3FA27",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "ProxyImageBuildProviderframeworkisCompleteServiceRole57A24358": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9DB7DFC9": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerOnEventFnE19B0B40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerOnEventFnE19B0B40",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerOnEventFnE19B0B40",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerIsCompleteFn3E4FD989",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerIsCompleteFn3E4FD989",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerIsCompleteFn3E4FD989",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9DB7DFC9",
+        "Roles": [
+          {
+            "Ref": "ProxyImageBuildProviderframeworkisCompleteServiceRole57A24358",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuildProviderframeworkonEvent6073213A": {
+      "DependsOn": [
+        "ProxyImageBuildProviderframeworkonEventServiceRoleDefaultPolicyD8DEFCD9",
+        "ProxyImageBuildProviderframeworkonEventServiceRole9B944BFD",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onEvent (TestBuild/ProxyImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerIsCompleteFn3E4FD989",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerOnEventFnE19B0B40",
+                "Arn",
+              ],
+            },
+            "WAITER_STATE_MACHINE_ARN": {
+              "Ref": "ProxyImageBuildProviderwaiterstatemachineB116010B",
+            },
+          },
+        },
+        "Handler": "framework.onEvent",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildProviderframeworkonEventServiceRole9B944BFD",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ProxyImageBuildProviderframeworkonEventLogRetention1D0F3101": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "ProxyImageBuildProviderframeworkonEvent6073213A",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "ProxyImageBuildProviderframeworkonEventServiceRole9B944BFD": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageBuildProviderframeworkonEventServiceRoleDefaultPolicyD8DEFCD9": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerOnEventFnE19B0B40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerOnEventFnE19B0B40",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerOnEventFnE19B0B40",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerIsCompleteFn3E4FD989",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerIsCompleteFn3E4FD989",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerIsCompleteFn3E4FD989",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "states:StartExecution",
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "ProxyImageBuildProviderwaiterstatemachineB116010B",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageBuildProviderframeworkonEventServiceRoleDefaultPolicyD8DEFCD9",
+        "Roles": [
+          {
+            "Ref": "ProxyImageBuildProviderframeworkonEventServiceRole9B944BFD",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuildProviderframeworkonTimeout552F5355": {
+      "DependsOn": [
+        "ProxyImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicy5B892D79",
+        "ProxyImageBuildProviderframeworkonTimeoutServiceRole488ED1DE",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onTimeout (TestBuild/ProxyImage/BuildProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_IS_COMPLETE_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerIsCompleteFn3E4FD989",
+                "Arn",
+              ],
+            },
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "ProxyImageTriggerOnEventFnE19B0B40",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.onTimeout",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildProviderframeworkonTimeoutServiceRole488ED1DE",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ProxyImageBuildProviderframeworkonTimeoutLogRetentionBB902453": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "ProxyImageBuildProviderframeworkonTimeout552F5355",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "ProxyImageBuildProviderframeworkonTimeoutServiceRole488ED1DE": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicy5B892D79": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerOnEventFnE19B0B40",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerOnEventFnE19B0B40",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerOnEventFnE19B0B40",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageTriggerIsCompleteFn3E4FD989",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageTriggerIsCompleteFn3E4FD989",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageTriggerIsCompleteFn3E4FD989",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageBuildProviderframeworkonTimeoutServiceRoleDefaultPolicy5B892D79",
+        "Roles": [
+          {
+            "Ref": "ProxyImageBuildProviderframeworkonTimeoutServiceRole488ED1DE",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuildProviderwaiterstatemachineB116010B": {
+      "DependsOn": [
+        "ProxyImageBuildProviderwaiterstatemachineRoleDefaultPolicy9FB950DE",
+        "ProxyImageBuildProviderwaiterstatemachineRole06253D9F",
+      ],
+      "Properties": {
+        "DefinitionString": {
+          "Fn::Join": [
+            "",
+            [
+              "{"StartAt":"framework-isComplete-task","States":{"framework-isComplete-task":{"End":true,"Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":15,"MaxAttempts":160,"BackoffRate":1}],"Catch":[{"ErrorEquals":["States.ALL"],"Next":"framework-onTimeout-task"}],"Type":"Task","Resource":"",
+              {
+                "Fn::GetAtt": [
+                  "ProxyImageBuildProviderframeworkisComplete53D3FA27",
+                  "Arn",
+                ],
+              },
+              ""},"framework-onTimeout-task":{"End":true,"Type":"Task","Resource":"",
+              {
+                "Fn::GetAtt": [
+                  "ProxyImageBuildProviderframeworkonTimeout552F5355",
+                  "Arn",
+                ],
+              },
+              ""}}}",
+            ],
+          ],
+        },
+        "RoleArn": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildProviderwaiterstatemachineRole06253D9F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::StepFunctions::StateMachine",
+    },
+    "ProxyImageBuildProviderwaiterstatemachineRole06253D9F": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "states.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageBuildProviderwaiterstatemachineRoleDefaultPolicy9FB950DE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageBuildProviderframeworkisComplete53D3FA27",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageBuildProviderframeworkisComplete53D3FA27",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "ProxyImageBuildProviderframeworkonTimeout552F5355",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "ProxyImageBuildProviderframeworkonTimeout552F5355",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageBuildProviderwaiterstatemachineRoleDefaultPolicy9FB950DE",
+        "Roles": [
+          {
+            "Ref": "ProxyImageBuildProviderwaiterstatemachineRole06253D9F",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuildRole70F6F0F8": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "codebuild.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageBuildRoleDefaultPolicyBDD33F11": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a.zip",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:us-east-1:123456789012:log-group:/aws/codebuild/",
+                      {
+                        "Ref": "ProxyImageBuild77DEACC0",
+                      },
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":logs:us-east-1:123456789012:log-group:/aws/codebuild/",
+                      {
+                        "Ref": "ProxyImageBuild77DEACC0",
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "codebuild:CreateReportGroup",
+                "codebuild:CreateReport",
+                "codebuild:UpdateReport",
+                "codebuild:BatchPutTestCases",
+                "codebuild:BatchPutCodeCoverages",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":codebuild:us-east-1:123456789012:report-group/",
+                    {
+                      "Ref": "ProxyImageBuild77DEACC0",
+                    },
+                    "-*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+                "ecr:CompleteLayerUpload",
+                "ecr:UploadLayerPart",
+                "ecr:InitiateLayerUpload",
+                "ecr:PutImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageRepoBB30DFC4",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageBuildRoleDefaultPolicyBDD33F11",
+        "Roles": [
+          {
+            "Ref": "ProxyImageBuildRole70F6F0F8",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageBuildTrigger3E40932C": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "ProxyImageBuild77DEACC0",
+        "ProxyImageBuildRoleDefaultPolicyBDD33F11",
+        "ProxyImageBuildRole70F6F0F8",
+      ],
+      "Properties": {
+        "ImageTag": "4f6e21256cc7e3967d61bc2258a89c6bd1fcabe628d5299eb1a7b17763c7d70a",
+        "ProjectName": {
+          "Ref": "ProxyImageBuild77DEACC0",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "ProxyImageBuildProviderframeworkonEvent6073213A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ProxyImageRepoBB30DFC4": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "EmptyOnDelete": true,
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true,
+        },
+        "RepositoryName": "private-realtime-ai-agent-agent/proxy",
+      },
+      "Type": "AWS::ECR::Repository",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ProxyImageTriggerIsCompleteFn3E4FD989": {
+      "DependsOn": [
+        "ProxyImageTriggerIsCompleteFnServiceRoleDefaultPolicyD62A0494",
+        "ProxyImageTriggerIsCompleteFnServiceRoleF9CA0283",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+import boto3
+
+_TERMINAL_OK = "SUCCEEDED"
+_TERMINAL_BAD = ("FAILED", "FAULT", "TIMED_OUT", "STOPPED")
+
+
+def on_event(event, context):
+    request_type = event["RequestType"]
+    if request_type == "Delete":
+        return {"PhysicalResourceId": event.get("PhysicalResourceId") or "image-build"}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = boto3.client("codebuild").start_build(projectName=project)["build"]["id"]
+    print(f"started build {build_id} for project {project}")
+    # Carry the build id forward to is_complete via Data.
+    return {"PhysicalResourceId": "image-build", "Data": {"BuildId": build_id}}
+
+
+def _latest_build_id(project):
+    ids = boto3.client("codebuild").list_builds_for_project(projectName=project).get("ids", [])
+    return ids[0] if ids else None
+
+
+def is_complete(event, context):
+    if event["RequestType"] == "Delete":
+        return {"IsComplete": True}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = (event.get("Data") or {}).get("BuildId") or _latest_build_id(project)
+    if not build_id:
+        return {"IsComplete": False}
+
+    cb = boto3.client("codebuild")
+    builds = cb.batch_get_builds(ids=[build_id]).get("builds", [])
+    if not builds:
+        return {"IsComplete": False}
+    status = builds[0].get("buildStatus", "IN_PROGRESS")
+    print(f"build {build_id} status={status}")
+    if status == _TERMINAL_OK:
+        return {"IsComplete": True}
+    if status in _TERMINAL_BAD:
+        raise Exception(f"image build {build_id} did not succeed (status {status}); see CodeBuild logs")
+    return {"IsComplete": False}
+",
+        },
+        "Description": "Polls the image CodeBuild until done (isComplete)",
+        "Handler": "index.is_complete",
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyImageTriggerIsCompleteFnServiceRoleF9CA0283",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ProxyImageTriggerIsCompleteFnLogRetention854303FC": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "ProxyImageTriggerIsCompleteFn3E4FD989",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "ProxyImageTriggerIsCompleteFnServiceRoleDefaultPolicyD62A0494": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds",
+                "codebuild:ListBuildsForProject",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageBuild77DEACC0",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageTriggerIsCompleteFnServiceRoleDefaultPolicyD62A0494",
+        "Roles": [
+          {
+            "Ref": "ProxyImageTriggerIsCompleteFnServiceRoleF9CA0283",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyImageTriggerIsCompleteFnServiceRoleF9CA0283": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageTriggerOnEventFnE19B0B40": {
+      "DependsOn": [
+        "ProxyImageTriggerOnEventFnServiceRoleDefaultPolicy521A9F75",
+        "ProxyImageTriggerOnEventFnServiceRole28490240",
+      ],
+      "Properties": {
+        "Code": {
+          "ZipFile": "
+import boto3
+
+_TERMINAL_OK = "SUCCEEDED"
+_TERMINAL_BAD = ("FAILED", "FAULT", "TIMED_OUT", "STOPPED")
+
+
+def on_event(event, context):
+    request_type = event["RequestType"]
+    if request_type == "Delete":
+        return {"PhysicalResourceId": event.get("PhysicalResourceId") or "image-build"}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = boto3.client("codebuild").start_build(projectName=project)["build"]["id"]
+    print(f"started build {build_id} for project {project}")
+    # Carry the build id forward to is_complete via Data.
+    return {"PhysicalResourceId": "image-build", "Data": {"BuildId": build_id}}
+
+
+def _latest_build_id(project):
+    ids = boto3.client("codebuild").list_builds_for_project(projectName=project).get("ids", [])
+    return ids[0] if ids else None
+
+
+def is_complete(event, context):
+    if event["RequestType"] == "Delete":
+        return {"IsComplete": True}
+
+    project = event["ResourceProperties"]["ProjectName"]
+    build_id = (event.get("Data") or {}).get("BuildId") or _latest_build_id(project)
+    if not build_id:
+        return {"IsComplete": False}
+
+    cb = boto3.client("codebuild")
+    builds = cb.batch_get_builds(ids=[build_id]).get("builds", [])
+    if not builds:
+        return {"IsComplete": False}
+    status = builds[0].get("buildStatus", "IN_PROGRESS")
+    print(f"build {build_id} status={status}")
+    if status == _TERMINAL_OK:
+        return {"IsComplete": True}
+    if status in _TERMINAL_BAD:
+        raise Exception(f"image build {build_id} did not succeed (status {status}); see CodeBuild logs")
+    return {"IsComplete": False}
+",
+        },
+        "Description": "Starts the image CodeBuild on deploy (onEvent)",
+        "Handler": "index.on_event",
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyImageTriggerOnEventFnServiceRole28490240",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "ProxyImageTriggerOnEventFnLogRetention14D05053": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "ProxyImageTriggerOnEventFnE19B0B40",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "ProxyImageTriggerOnEventFnServiceRole28490240": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ProxyImageTriggerOnEventFnServiceRoleDefaultPolicy521A9F75": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "codebuild:StartBuild",
+                "codebuild:BatchGetBuilds",
+                "codebuild:ListBuildsForProject",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ProxyImageBuild77DEACC0",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyImageTriggerOnEventFnServiceRoleDefaultPolicy521A9F75",
+        "Roles": [
+          {
+            "Ref": "ProxyImageTriggerOnEventFnServiceRole28490240",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`split-stack snapshots Data stack template matches the stored snapshot 1`] = `
+{
+  "Outputs": {
+    "CollectionEndpoint": {
+      "Value": {
+        "Fn::GetAtt": [
+          "OpenSearch587998CD",
+          "CollectionEndpoint",
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttAgentExecutionRole8AD76C36ArnC6916E3F": {
+      "Export": {
+        "Name": "TestData:ExportsOutputFnGetAttAgentExecutionRole8AD76C36ArnC6916E3F",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AgentExecutionRole8AD76C36",
+          "Arn",
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttOpenSearch587998CDCollectionEndpointE214FF9A": {
+      "Export": {
+        "Name": "TestData:ExportsOutputFnGetAttOpenSearch587998CDCollectionEndpointE214FF9A",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "OpenSearch587998CD",
+          "CollectionEndpoint",
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttProxyTaskRoleE745B8C2Arn120E53BA": {
+      "Export": {
+        "Name": "TestData:ExportsOutputFnGetAttProxyTaskRoleE745B8C2Arn120E53BA",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "ProxyTaskRoleE745B8C2",
+          "Arn",
+        ],
+      },
+    },
+    "ExportsOutputRefUploadsBucketC4B27CC7CCC94A6B": {
+      "Export": {
+        "Name": "TestData:ExportsOutputRefUploadsBucketC4B27CC7CCC94A6B",
+      },
+      "Value": {
+        "Ref": "UploadsBucketC4B27CC7",
+      },
+    },
+    "UploadBucket": {
+      "Value": {
+        "Ref": "UploadsBucketC4B27CC7",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AgentExecutionRole8AD76C36": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "bedrock-agentcore.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Execution role for the AgentCore-hosted Strands agent (v2)",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "AgentExecutionRoleDefaultPolicyF9CB1199": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-20250514",
+                "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+              ],
+              "Sid": "BedrockInvokeScopedModels",
+            },
+            {
+              "Action": "aoss:APIAccessAll",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "OpenSearch587998CD",
+                  "CollectionArn",
+                ],
+              },
+              "Sid": "AossApiAccessScopedCollection",
+            },
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::ImportValue": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
+              },
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:DescribeLogStreams",
+                "logs:CreateLogGroup",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":logs:us-east-1:123456789012:log-group:/aws/bedrock-agentcore/runtimes/*",
+                  ],
+                ],
+              },
+              "Sid": "LogGroupAccess",
+            },
+            {
+              "Action": "logs:DescribeLogGroups",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":logs:us-east-1:123456789012:log-group:*",
+                  ],
+                ],
+              },
+              "Sid": "DescribeLogGroups",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition",
+                    },
+                    ":logs:us-east-1:123456789012:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*",
+                  ],
+                ],
+              },
+              "Sid": "LogStreamAccess",
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+                "xray:GetSamplingRules",
+                "xray:GetSamplingTargets",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+              "Sid": "XRayAccess",
+            },
+            {
+              "Action": "cloudwatch:PutMetricData",
+              "Condition": {
+                "StringEquals": {
+                  "cloudwatch:namespace": "bedrock-agentcore",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "*",
+              "Sid": "CloudWatchMetrics",
+            },
+            {
+              "Action": [
+                "bedrock-agentcore:GetWorkloadAccessToken",
+                "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
+                "bedrock-agentcore:GetWorkloadAccessTokenForUserId",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":bedrock-agentcore:us-east-1:123456789012:workload-identity-directory/default/workload-identity/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "GetAgentAccessToken",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "AgentExecutionRoleDefaultPolicyF9CB1199",
+        "Roles": [
+          {
+            "Ref": "AgentExecutionRole8AD76C36",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "UploadsBucketC4B27CC7",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+      "DependsOn": [
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:PutRetentionPolicy",
+                "logs:DeleteRetentionPolicy",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+        "Roles": [
+          {
+            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "OpenSearch587998CD": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AossVpcEndpointId": {
+          "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcAossDataEndpointEF4B6BDE096F8837",
+        },
+        "CollectionName": "agent-rag-agent",
+        "DataAccessPrincipals": {
+          "Fn::Join": [
+            "",
+            [
+              {
+                "Fn::GetAtt": [
+                  "OpenSearchProvisionerFunctionServiceRole156DB45D",
+                  "Arn",
+                ],
+              },
+              ",",
+              {
+                "Fn::GetAtt": [
+                  "AgentExecutionRole8AD76C36",
+                  "Arn",
+                ],
+              },
+              ",",
+              {
+                "Fn::GetAtt": [
+                  "ProxyTaskRoleE745B8C2",
+                  "Arn",
+                ],
+              },
+            ],
+          ],
+        },
+        "Generation": "NEXTGEN",
+        "IndexName": "agent-knowledge",
+        "Revision": "4",
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "OpenSearchProvisionerProviderframeworkonEvent735AB7AE",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFormation::CustomResource",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "OpenSearchProvisionerFunction77395DC1": {
+      "DependsOn": [
+        "OpenSearchProvisionerFunctionServiceRoleDefaultPolicyD6CB7780",
+        "OpenSearchProvisionerFunctionServiceRole156DB45D",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "044257f75f80a555e4dfae36a3ca25a0e7357603aaf2ead9156ff634873a4ccd.zip",
+        },
+        "Description": "Provisions OpenSearch Serverless NextGen (collection group + policies + collection + index + seed) via the aoss API",
+        "Environment": {
+          "Variables": {
+            "AOSS_VPC_ENDPOINT_ID": {
+              "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcAossDataEndpointEF4B6BDE096F8837",
+            },
+            "BEDROCK_EMBED_MODEL_ID": "amazon.titan-embed-text-v2:0",
+            "COLLECTION_NAME": "agent-rag-agent",
+            "GENERATION": "NEXTGEN",
+            "LAMBDA_ROLE_ARN": {
+              "Fn::GetAtt": [
+                "OpenSearchProvisionerFunctionServiceRole156DB45D",
+                "Arn",
+              ],
+            },
+            "OPENSEARCH_INDEX": "agent-knowledge",
+            "UPLOAD_BUCKET": {
+              "Ref": "UploadsBucketC4B27CC7",
+            },
+          },
+        },
+        "Handler": "provisioner_handler.handler",
+        "MemorySize": 512,
+        "Role": {
+          "Fn::GetAtt": [
+            "OpenSearchProvisionerFunctionServiceRole156DB45D",
+            "Arn",
+          ],
+        },
+        "Runtime": "python3.12",
+        "Timeout": 900,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::ImportValue": "TestNetwork:ExportsOutputFnGetAttVpcEcsTaskSg027E46FCGroupId65A9CB28",
+            },
+          ],
+          "SubnetIds": [
+            {
+              "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3",
+            },
+            {
+              "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68",
+            },
+          ],
+        },
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "OpenSearchProvisionerFunctionServiceRole156DB45D": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "OpenSearchProvisionerFunctionServiceRoleDefaultPolicyD6CB7780": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "aoss:CreateCollectionGroup",
+                "aoss:UpdateCollectionGroup",
+                "aoss:DeleteCollectionGroup",
+                "aoss:BatchGetCollectionGroup",
+                "aoss:ListCollectionGroups",
+                "aoss:AddCollectionToCollectionGroup",
+                "aoss:CreateCollection",
+                "aoss:DeleteCollection",
+                "aoss:BatchGetCollection",
+                "aoss:ListCollections",
+                "aoss:CreateSecurityPolicy",
+                "aoss:UpdateSecurityPolicy",
+                "aoss:GetSecurityPolicy",
+                "aoss:DeleteSecurityPolicy",
+                "aoss:ListSecurityPolicies",
+                "aoss:CreateAccessPolicy",
+                "aoss:UpdateAccessPolicy",
+                "aoss:GetAccessPolicy",
+                "aoss:DeleteAccessPolicy",
+                "aoss:ListAccessPolicies",
+                "aoss:APIAccessAll",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+              "Sid": "AossControlPlaneBootstrap",
+            },
+            {
+              "Action": "bedrock:InvokeModel",
+              "Effect": "Allow",
+              "Resource": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+              "Sid": "BedrockInvokeEmbeddingsModel",
+            },
+            {
+              "Action": [
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "UploadsBucketC4B27CC7",
+                        "Arn",
+                      ],
+                    },
+                    "/sops/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": [
+                "kms:Encrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+                "kms:Decrypt",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "UploadsKeyEAFA4DCE",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "OpenSearchProvisionerFunctionServiceRoleDefaultPolicyD6CB7780",
+        "Roles": [
+          {
+            "Ref": "OpenSearchProvisionerFunctionServiceRole156DB45D",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "OpenSearchProvisionerProviderframeworkonEvent735AB7AE": {
+      "DependsOn": [
+        "OpenSearchProvisionerProviderframeworkonEventServiceRoleDefaultPolicy5F6A0C11",
+        "OpenSearchProvisionerProviderframeworkonEventServiceRole14DD7608",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "07a90cc3efdfc34da22208dcd9d211f06f5b0e01b21e778edc7c3966b1f61d57.zip",
+        },
+        "Description": "AWS CDK resource provider framework - onEvent (TestData/OpenSearch/ProvisionerProvider)",
+        "Environment": {
+          "Variables": {
+            "USER_ON_EVENT_FUNCTION_ARN": {
+              "Fn::GetAtt": [
+                "OpenSearchProvisionerFunction77395DC1",
+                "Arn",
+              ],
+            },
+          },
+        },
+        "Handler": "framework.onEvent",
+        "LoggingConfig": {
+          "ApplicationLogLevel": "FATAL",
+          "LogFormat": "JSON",
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "OpenSearchProvisionerProviderframeworkonEventServiceRole14DD7608",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "OpenSearchProvisionerProviderframeworkonEventLogRetentionC25B77C8": {
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "OpenSearchProvisionerProviderframeworkonEvent735AB7AE",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 7,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::LogRetention",
+    },
+    "OpenSearchProvisionerProviderframeworkonEventServiceRole14DD7608": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "OpenSearchProvisionerProviderframeworkonEventServiceRoleDefaultPolicy5F6A0C11": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "lambda:InvokeFunction",
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "OpenSearchProvisionerFunction77395DC1",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "OpenSearchProvisionerFunction77395DC1",
+                          "Arn",
+                        ],
+                      },
+                      ":*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "lambda:GetFunction",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "OpenSearchProvisionerFunction77395DC1",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "OpenSearchProvisionerProviderframeworkonEventServiceRoleDefaultPolicy5F6A0C11",
+        "Roles": [
+          {
+            "Ref": "OpenSearchProvisionerProviderframeworkonEventServiceRole14DD7608",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyTaskRoleDefaultPolicy445CC52E": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "bedrock-agentcore:InvokeAgentRuntime",
+                "bedrock-agentcore:InvokeAgentRuntimeForUser",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":bedrock-agentcore:us-east-1:123456789012:runtime/private_realtime_ai_agent_agent-*",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":bedrock-agentcore:us-east-1:123456789012:runtime/private_realtime_ai_agent_agent-*/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "InvokeAgentRuntime",
+            },
+            {
+              "Action": "aoss:APIAccessAll",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "OpenSearch587998CD",
+                  "CollectionArn",
+                ],
+              },
+              "Sid": "AossApiAccessForUploads",
+            },
+            {
+              "Action": "bedrock:InvokeModel",
+              "Effect": "Allow",
+              "Resource": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",
+              "Sid": "BedrockEmbedForUploads",
+            },
+            {
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadsBucketC4B27CC7",
+                          "Arn",
+                        ],
+                      },
+                      "/uploads/*",
+                    ],
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadsBucketC4B27CC7",
+                          "Arn",
+                        ],
+                      },
+                      "/extracted/*",
+                    ],
+                  ],
+                },
+              ],
+              "Sid": "S3UploadsReadWrite",
+            },
+            {
+              "Action": [
+                "kms:Decrypt",
+                "kms:Encrypt",
+                "kms:ReEncrypt*",
+                "kms:GenerateDataKey*",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "UploadsKeyEAFA4DCE",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ProxyTaskRoleDefaultPolicy445CC52E",
+        "Roles": [
+          {
+            "Ref": "ProxyTaskRoleE745B8C2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ProxyTaskRoleE745B8C2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Description": "Proxy task role: invoke the AgentCore runtime + upload ingestion (v2)",
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "UploadsBucketAutoDeleteObjectsCustomResource649FB41E": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "UploadsBucketPolicy4A686DED",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "UploadsBucketC4B27CC7",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UploadsBucketC4B27CC7": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "BucketKeyEnabled": true,
+              "ServerSideEncryptionByDefault": {
+                "KMSMasterKeyID": {
+                  "Fn::GetAtt": [
+                    "UploadsKeyEAFA4DCE",
+                    "Arn",
+                  ],
+                },
+                "SSEAlgorithm": "aws:kms",
+              },
+            },
+          ],
+        },
+        "LifecycleConfiguration": {
+          "Rules": [
+            {
+              "ExpirationInDays": 30,
+              "Prefix": "uploads/",
+              "Status": "Enabled",
+            },
+            {
+              "ExpirationInDays": 30,
+              "Prefix": "extracted/",
+              "Status": "Enabled",
+            },
+          ],
+        },
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": true,
+          "BlockPublicPolicy": true,
+          "IgnorePublicAcls": true,
+          "RestrictPublicBuckets": true,
+        },
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "UploadsBucketPolicy4A686DED": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "UploadsBucketC4B27CC7",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UploadsBucketC4B27CC7",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadsBucketC4B27CC7",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "UploadsBucketC4B27CC7",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "UploadsBucketC4B27CC7",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "UploadsKeyEAFA4DCE": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": "CMK for user-uploaded contract documents (uploads bucket)",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Statement": [
+            {
+              "Action": "kms:*",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::123456789012:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::KMS::Key",
+      "UpdateReplacePolicy": "Delete",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
+
+exports[`split-stack snapshots Network stack template matches the stored snapshot 1`] = `
+{
+  "Outputs": {
+    "ExportsOutputFnGetAttVpcAlbSgBAB02237GroupIdD437DBAC": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputFnGetAttVpcAlbSgBAB02237GroupIdD437DBAC",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "VpcAlbSgBAB02237",
+          "GroupId",
+        ],
+      },
+    },
+    "ExportsOutputFnGetAttVpcEcsTaskSg027E46FCGroupId65A9CB28": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputFnGetAttVpcEcsTaskSg027E46FCGroupId65A9CB28",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "VpcEcsTaskSg027E46FC",
+          "GroupId",
+        ],
+      },
+    },
+    "ExportsOutputRefVpc8378EB38272D6E3A": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputRefVpc8378EB38272D6E3A",
+      },
+      "Value": {
+        "Ref": "Vpc8378EB38",
+      },
+    },
+    "ExportsOutputRefVpcAossDataEndpointEF4B6BDE096F8837": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputRefVpcAossDataEndpointEF4B6BDE096F8837",
+      },
+      "Value": {
+        "Ref": "VpcAossDataEndpointEF4B6BDE",
+      },
+    },
+    "ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet1SubnetE48C57379FE391D3",
+      },
+      "Value": {
+        "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+      },
+    },
+    "ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68": {
+      "Export": {
+        "Name": "TestNetwork:ExportsOutputRefVpcIsolatedSubnet2Subnet16364B914643ED68",
+      },
+      "Value": {
+        "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+      },
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+  },
+  "Resources": {
+    "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
+      "DependsOn": [
+        "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "56f7467bbde8a5efebcf57ae9e460027607099bab9f844669dcf5d800172ee5a.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs22.x",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "Vpc8378EB38": {
+      "Properties": {
+        "CidrBlock": "10.10.8.0/22",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "VpcAlbSgBAB02237": {
+      "Properties": {
+        "GroupDescription": "Security group for the internal Application Load Balancer",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow from anyone on port 80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "VpcAlbSgtoTestNetworkVpcEcsTaskSgD86956A280806EA27DAE": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "VpcEcsTaskSg027E46FC",
+            "GroupId",
+          ],
+        },
+        "FromPort": 8080,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "VpcAlbSgBAB02237",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 8080,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "VpcAossControlEndpointF4AFD17B": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.aoss",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcAossDataEndpointEF4B6BDE": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.aoss-data",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcBedrockAgentCoreEndpoint4233723C": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.bedrock-agentcore",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcBedrockRuntimeEndpoint726DDE28": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.bedrock-runtime",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcCloudWatchLogsEndpointA6195533": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.logs",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcCognitoIdpEndpointF0FEF4F2": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.cognito-idp",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcEcrApiEndpoint25D60339": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.ecr.api",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcEcrDockerEndpoint53ED547B": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.ecr.dkr",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcEcsTaskSg027E46FC": {
+      "Properties": {
+        "GroupDescription": "Security group for the ECS Fargate agent tasks",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "VpcEcsTaskSgfromTestNetworkVpcAlbSg93CCB75080806427DCB1": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 8080,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "VpcEcsTaskSg027E46FC",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "VpcAlbSgBAB02237",
+            "GroupId",
+          ],
+        },
+        "ToPort": 8080,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "VpcEcsTaskSgtoIndirectPeer443132D1F8F": {
+      "Properties": {
+        "Description": "HTTPS to Amazon S3 (ECR image-layer pulls) via the S3 gateway endpoint",
+        "DestinationPrefixListId": {
+          "Fn::GetAtt": [
+            "VpcS3PrefixListLookup67B68575",
+            "PrefixLists.0.PrefixListId",
+          ],
+        },
+        "FromPort": 443,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "VpcEcsTaskSg027E46FC",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 443,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "VpcEcsTaskSgtoTestNetworkVpcEndpointSgEBCB8231443F5B922F4": {
+      "Properties": {
+        "Description": "HTTPS to the interface VPC endpoints",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "VpcEndpointSgEE00ED56",
+            "GroupId",
+          ],
+        },
+        "FromPort": 443,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "VpcEcsTaskSg027E46FC",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 443,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "VpcEndpointSgEE00ED56": {
+      "Properties": {
+        "GroupDescription": "Security group for the interface VPC endpoints (443 from ECS tasks only)",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "255.255.255.255/32",
+            "Description": "Disallow all traffic",
+            "FromPort": 252,
+            "IpProtocol": "icmp",
+            "ToPort": 86,
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "VpcEndpointSgfromTestNetworkVpcEcsTaskSgD86956A2443EEFAEAA4": {
+      "Properties": {
+        "Description": "Allow HTTPS from ECS tasks only",
+        "FromPort": 443,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "VpcEndpointSgEE00ED56",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "VpcEcsTaskSg027E46FC",
+            "GroupId",
+          ],
+        },
+        "ToPort": 443,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "VpcInternetGatewayAFE6D548": {
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "VpcInternetGatewayAttachment0367750F": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "VpcInternetGatewayAFE6D548",
+        },
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "VpcIsolatedSubnet1RouteTable4771E3E5": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default/IsolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcIsolatedSubnet1RouteTableAssociationD300FCBB": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcIsolatedSubnet1RouteTable4771E3E5",
+        },
+        "SubnetId": {
+          "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcIsolatedSubnet1SubnetE48C5737": {
+      "Properties": {
+        "AvailabilityZone": "us-east-1a",
+        "CidrBlock": "10.10.8.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default/IsolatedSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcIsolatedSubnet2RouteTable1D30AF7D": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default/IsolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VpcIsolatedSubnet2RouteTableAssociationF7B18CCA": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VpcIsolatedSubnet2RouteTable1D30AF7D",
+        },
+        "SubnetId": {
+          "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VpcIsolatedSubnet2Subnet16364B91": {
+      "Properties": {
+        "AvailabilityZone": "us-east-1d",
+        "CidrBlock": "10.10.9.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Isolated",
+          },
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default/IsolatedSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VpcS3A5408339": {
+      "Properties": {
+        "RouteTableIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1RouteTable4771E3E5",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2RouteTable1D30AF7D",
+          },
+        ],
+        "ServiceName": {
+          "Fn::Join": [
+            "",
+            [
+              "com.amazonaws.",
+              {
+                "Ref": "AWS::Region",
+              },
+              ".s3",
+            ],
+          ],
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Gateway",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+    "VpcS3PrefixListLookup67B68575": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "VpcS3PrefixListLookupCustomResourcePolicy9456E039",
+      ],
+      "Properties": {
+        "Create": "{"service":"EC2","action":"describePrefixLists","parameters":{"Filters":[{"Name":"prefix-list-name","Values":["com.amazonaws.us-east-1.s3"]}]},"physicalResourceId":{"id":"s3-prefix-list-us-east-1"}}",
+        "InstallLatestAwsSdk": true,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": "{"service":"EC2","action":"describePrefixLists","parameters":{"Filters":[{"Name":"prefix-list-name","Values":["com.amazonaws.us-east-1.s3"]}]},"physicalResourceId":{"id":"s3-prefix-list-us-east-1"}}",
+      },
+      "Type": "Custom::AWS",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VpcS3PrefixListLookupCustomResourcePolicy9456E039": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ec2:DescribePrefixLists",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "VpcS3PrefixListLookupCustomResourcePolicy9456E039",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "VpcXRayEndpoint7EEF95F3": {
+      "Properties": {
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "VpcEndpointSgEE00ED56",
+              "GroupId",
+            ],
+          },
+        ],
+        "ServiceName": "com.amazonaws.us-east-1.xray",
+        "SubnetIds": [
+          {
+            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
+          },
+          {
+            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "TestNetwork/Vpc/Default",
+          },
+        ],
+        "VpcEndpointType": "Interface",
+        "VpcId": {
+          "Ref": "Vpc8378EB38",
+        },
+      },
+      "Type": "AWS::EC2::VPCEndpoint",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;

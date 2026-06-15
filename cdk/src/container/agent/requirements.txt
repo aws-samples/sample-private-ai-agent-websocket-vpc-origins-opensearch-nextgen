@@ -1,0 +1,26 @@
+# Production runtime dependencies for the Strands agent container.
+# Pinned with compatible-release upper bounds for reproducible, predictable builds.
+
+# Web framework + ASGI server (native async + WebSocket support)
+fastapi>=0.115.0,<1.0.0
+uvicorn[standard]>=0.34.0,<1.0.0
+websockets>=14.0,<16.0
+
+# Strands Agent Framework (model-driven agent loop + Bedrock provider)
+strands-agents>=1.0.0,<2.0.0
+
+# Bedrock AgentCore Runtime SDK (provides BedrockAgentCoreApp: /invocations +
+# /ping HTTP surface and SSE streaming transport).
+bedrock-agentcore>=0.1.0,<1.0.0
+
+# AWS SDKs (Bedrock Runtime inference + SigV4 credentials)
+boto3>=1.34.0,<2.0.0
+botocore>=1.34.0,<2.0.0
+
+# OpenSearch client for RAG retrieval against OpenSearch Serverless (aoss).
+# opensearch-py ships AWSV4SignerAuth; requests-aws4auth is a fallback signer.
+opensearch-py>=2.6.0,<3.0.0
+requests-aws4auth>=1.2.3,<2.0.0
+
+# Data validation / settings models
+pydantic>=2.6.0,<3.0.0

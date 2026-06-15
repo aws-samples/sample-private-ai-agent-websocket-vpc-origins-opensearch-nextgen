@@ -1,0 +1,38 @@
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+cdk.out.*
+
+# Dependencies
+node_modules
+
+# Build output
+*.js
+!jest.config.js
+*.d.ts
+
+# CDK context cache
+cdk.context.json
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage
+coverage
+
+# Python (agent container / seed)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.hypothesis/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

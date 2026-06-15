@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Private Real-Time AI Agent — a secure web console for reviewing partner contracts against Example Corp SOPs, served privately behind Amazon CloudFront." />
+  <title>Private Real-Time AI Agent · Secure Console</title>
+  <!--
+    Self-contained demo SPA (v2). No external/CDN dependencies — all HTML, CSS,
+    and JS are inline so the page works fully private behind CloudFront.
+
+    Single-viewport console: the whole app fits the screen with NO page scroll.
+    Only the transcript scrolls. Upload is folded into the chat composer; the
+    audit is triggered from an in-chat action. Starter prompts show before a
+    conversation begins and tuck away once it starts.
+
+    WebSocket protocol (shared contract with the proxy):
+      server -> client : welcome | status | token | complete | error | ping | pong
+      client -> server : {"query":"..."} | {"type":"audit","textKey":"..."} |
+                         {"type":"ping","t":<ms>}
+  -->
+  <style>
+    :root {
+      /* "Terminal noir" palette: near-black ink, phosphor green + signal cyan. */
+      --bg: #07090d;
+      --bg-grid: #0b0f16;
+      --panel: #0e1219;
+      --panel-2: #121826;
+      --ink: #e8eef2;
+      --ink-dim: #9fb0bd;
+      --ink-faint: #5e6e7a;
+      --line: #1d2633;
+      --line-bright: #2c3a4a;
+      --phosphor: #5af2b0;     /* primary accent — agent / success */
+      --signal: #57d6ff;       /* secondary accent — links / info */
+      --amber: #ffcf6b;        /* working / warning */
+      --rose: #ff6b8b;         /* errors */
+      --violet: #b69cff;       /* user / send */
+      --radius: 14px;
+      --radius-sm: 9px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: "Avenir Next", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif;
+      --shadow: 0 18px 50px -20px rgba(0,0,0,0.8);
+    }
+
+    /* Light theme ("blueprint paper"): same structure, inverted ink/surfaces. */
+    :root[data-theme="light"] {
+      --bg: #eef2f7;
+      --bg-grid: #e1e7f0;
+      --panel: #ffffff;
+      --panel-2: #eff3f9;
+      --ink: #142029;
+      --ink-dim: #44535f;
+      --ink-faint: #7d8b98;
+      --line: #d8e0ea;
+      --line-bright: #c2cdd9;
+      --phosphor: #0c8f5d;
+      --signal: #0a73b8;
+      --amber: #b07816;
+      --rose: #d23a5c;
+      --violet: #6a4bd1;
+      --shadow: 0 16px 44px -24px rgba(20,40,70,0.30);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    /* Lock the viewport: the app fills the screen and never scrolls as a page. */
+    body {
+      height: 100%; overflow: hidden;
+      background:
+        radial-gradient(1200px 700px at 80% -10%, rgba(87,214,255,0.08), transparent 60%),
+        radial-gradient(900px 600px at -5% 110%, rgba(90,242,176,0.07), transparent 55%),
+        var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(var(--bg-grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+      background-size: 46px 46px;
+      mask-image: radial-gradient(circle at 50% 30%, rgba(0,0,0,0.5), transparent 80%);
+      opacity: 0.5;
+    }
+    a { color: var(--signal); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ===== App shell: header + main fill exactly one viewport ===== */
+    .app {
+      position: relative; z-index: 1; height: 100vh; height: 100dvh;
+      display: flex; flex-direction: column;
+      max-width: 1340px; margin: 0 auto; padding: 16px 20px 18px;
+    }
+
+    header.bar {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+      padding-bottom: 13px; border-bottom: 1px solid var(--line); margin-bottom: 14px;
+    }
+    .brand { display: flex; align-items: center; gap: 13px; }
+    .brand .mark {
+      width: 36px; height: 36px; border-radius: 11px; flex: 0 0 auto;
+      background: linear-gradient(150deg, var(--phosphor), var(--signal));
+      box-shadow: 0 0 24px -4px var(--phosphor); position: relative;
+    }
+    .brand .mark::after { content: ""; position: absolute; inset: 6px; border-radius: 6px; background: var(--bg); }
+    .brand .mark::before { content: ""; position: absolute; inset: 0; border-radius: 11px; background: radial-gradient(circle at 50% 50%, var(--phosphor), transparent 70%); opacity: 0.5; z-index: -1; }
+    .brand h1 { font-size: 15.5px; font-weight: 700; margin: 0; letter-spacing: 0.3px; }
+    .brand h1 span { display: block; font-family: var(--mono); font-size: 10.5px; font-weight: 400; color: var(--ink-faint); letter-spacing: 1.4px; text-transform: uppercase; }
+    .spacer { flex: 1 1 auto; }
+
+    .chip-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 9px;
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      padding: 7px 13px; border-radius: 999px;
+      border: 1px solid var(--line-bright); background: var(--panel);
+      text-transform: lowercase; letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .status-pill .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-faint); flex: 0 0 auto; }
+    .status-pill[data-state="connecting"], .status-pill[data-state="closing"] { color: var(--amber); border-color: rgba(255,207,107,0.4); }
+    .status-pill[data-state="connecting"] .dot, .status-pill[data-state="closing"] .dot { background: var(--amber); animation: blink 1s steps(2) infinite; }
+    .status-pill[data-state="open"] { color: var(--phosphor); border-color: rgba(90,242,176,0.45); }
+    .status-pill[data-state="open"] .dot { background: var(--phosphor); box-shadow: 0 0 10px var(--phosphor); }
+    .status-pill[data-state="closed"] { color: var(--ink-dim); }
+    .status-pill[data-state="failed"] { color: var(--rose); border-color: rgba(255,107,139,0.45); }
+    .status-pill[data-state="failed"] .dot { background: var(--rose); }
+    @keyframes blink { 50% { opacity: 0.25; } }
+
+    .ghost-btn {
+      font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.4px;
+      color: var(--ink-dim); background: var(--panel); border: 1px solid var(--line-bright);
+      border-radius: 999px; padding: 7px 14px; cursor: pointer; transition: all 120ms ease;
+    }
+    .ghost-btn:hover { color: var(--ink); border-color: var(--signal); }
+
+    /* ===== Main layout: chat (fills) + side rail, both viewport-height ===== */
+    main.layout {
+      flex: 1 1 auto; min-height: 0;
+      display: grid; grid-template-columns: 1fr 326px; gap: 18px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel), var(--bg));
+      border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow: hidden;
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .card-head {
+      flex: 0 0 auto;
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      padding: 12px 16px; border-bottom: 1px solid var(--line);
+      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--ink-faint);
+    }
+    .card-head .accent { color: var(--phosphor); }
+
+    /* ===== Chat column ===== */
+    .chat { min-height: 0; }
+    .transcript-wrap { position: relative; flex: 1 1 auto; min-height: 0; }
+    #transcript {
+      position: absolute; inset: 0; overflow-y: auto;
+      padding: 20px 18px; display: flex; flex-direction: column; gap: 15px;
+    }
+    #transcript::-webkit-scrollbar { width: 10px; }
+    #transcript::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 8px; }
+
+    .msg { display: flex; gap: 11px; max-width: 88%; animation: rise 240ms cubic-bezier(.2,.8,.2,1); }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+    .msg .avatar {
+      width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+      display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 700;
+      border: 1px solid var(--line-bright);
+    }
+    .msg .bubble {
+      padding: 11px 15px; border-radius: 13px; font-size: 14.5px;
+      white-space: pre-wrap; word-break: break-word; border: 1px solid var(--line);
+    }
+    .msg .meta { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin: 3px 2px 0; letter-spacing: 0.5px; }
+
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.user .avatar { color: var(--violet); border-color: rgba(182,156,255,0.5); background: rgba(182,156,255,0.08); }
+    .msg.user .bubble { background: rgba(182,156,255,0.10); border-color: rgba(182,156,255,0.28); border-bottom-right-radius: 4px; }
+    .msg.user .meta { text-align: right; }
+
+    .msg.agent .avatar { color: var(--phosphor); border-color: rgba(90,242,176,0.5); background: rgba(90,242,176,0.07); }
+    .msg.agent .bubble { background: var(--panel-2); border-bottom-left-radius: 4px; }
+    .msg.agent.streaming .bubble::after { content: "▋"; color: var(--phosphor); margin-left: 1px; animation: caret 1s steps(2) infinite; }
+    @keyframes caret { 50% { opacity: 0; } }
+
+    /* ===== Rendered markdown inside agent bubbles ===== */
+    .md > :first-child { margin-top: 0; }
+    .md > :last-child { margin-bottom: 0; }
+    .md p { margin: 0 0 9px; }
+    .md h1, .md h2, .md h3, .md h4 { margin: 14px 0 7px; line-height: 1.25; font-weight: 700; }
+    .md h1 { font-size: 1.32em; color: var(--phosphor); }
+    .md h2 { font-size: 1.18em; color: var(--phosphor); }
+    .md h3 { font-size: 1.06em; color: var(--signal); }
+    .md h4 { font-size: 0.98em; color: var(--signal); }
+    .md ul, .md ol { margin: 6px 0 10px; padding-left: 22px; }
+    .md li { margin: 3px 0; }
+    .md li > ul, .md li > ol { margin: 3px 0; }
+    .md strong { color: var(--ink); font-weight: 700; }
+    .md em { font-style: italic; }
+    .md a { color: var(--signal); text-decoration: underline; }
+    .md code {
+      font-family: var(--mono); font-size: 0.88em; padding: 1px 5px; border-radius: 5px;
+      background: rgba(127,139,152,0.16); border: 1px solid var(--line); color: var(--phosphor);
+    }
+    .md pre {
+      margin: 8px 0; padding: 11px 13px; border-radius: 9px; overflow-x: auto;
+      background: var(--bg); border: 1px solid var(--line-bright);
+    }
+    .md pre code { background: none; border: 0; padding: 0; color: var(--ink); font-size: 12.5px; }
+    .md blockquote {
+      margin: 8px 0; padding: 4px 13px; border-left: 3px solid var(--line-bright);
+      color: var(--ink-dim);
+    }
+    .md hr { border: 0; border-top: 1px solid var(--line); margin: 12px 0; }
+    .md table { border-collapse: collapse; margin: 9px 0; font-size: 13.5px; display: block; overflow-x: auto; }
+    .md th, .md td { border: 1px solid var(--line); padding: 6px 10px; text-align: left; }
+    .md th { background: var(--panel-2); color: var(--ink); font-weight: 700; }
+
+    .msg.system { align-self: center; max-width: 94%; }
+    .msg.system .bubble {
+      background: transparent; border: 1px dashed var(--line-bright); color: var(--ink-dim);
+      font-family: var(--mono); font-size: 12px; border-radius: 9px; text-align: center;
+    }
+    .msg.system.error .bubble { color: var(--rose); border-color: rgba(255,107,139,0.4); background: rgba(255,107,139,0.05); }
+    .msg.system.working .bubble { color: var(--amber); border-color: rgba(255,207,107,0.35); }
+    .msg.system.done .bubble { color: var(--phosphor); border-color: rgba(90,242,176,0.4); background: rgba(90,242,176,0.05); }
+    .msg.system .inline-action {
+      display: inline-block; margin-top: 9px; cursor: pointer;
+      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--phosphor); background: rgba(90,242,176,0.1); border: 1px solid rgba(90,242,176,0.4);
+      border-radius: 8px; padding: 8px 14px; transition: all 130ms ease;
+    }
+    .msg.system .inline-action:hover:not(:disabled) { background: rgba(90,242,176,0.2); }
+    .msg.system .inline-action:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* Empty state + starters live together so they vanish when chat begins. */
+    .empty-state { margin: auto; text-align: center; color: var(--ink-faint); width: 100%; max-width: 560px; }
+    .empty-state .big { font-size: 16px; color: var(--ink-dim); font-family: var(--mono); }
+    .empty-state .sub { font-size: 13px; margin-top: 6px; }
+    .starters { display: flex; flex-direction: column; gap: 9px; margin-top: 18px; }
+    .starter {
+      text-align: left; cursor: pointer; font-family: var(--sans); font-size: 13.5px;
+      color: var(--ink-dim); background: var(--panel-2); border: 1px solid var(--line-bright);
+      border-radius: 11px; padding: 11px 14px; transition: all 130ms ease; line-height: 1.35;
+    }
+    .starter:hover { color: var(--ink); border-color: var(--phosphor); transform: translateY(-1px); }
+    .starter .lead { color: var(--phosphor); font-family: var(--mono); font-size: 10.5px; letter-spacing: 1px; display: block; margin-bottom: 3px; }
+
+    /* Jump-to-latest pill (shows when scrolled up during a stream) */
+    .jump {
+      position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%) translateY(8px);
+      display: inline-flex; align-items: center; gap: 7px; cursor: pointer; opacity: 0; pointer-events: none;
+      font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+      color: #06231a; background: linear-gradient(150deg, var(--phosphor), var(--signal));
+      border: 0; border-radius: 999px; padding: 8px 15px; box-shadow: 0 8px 24px -8px rgba(90,242,176,0.6);
+      transition: opacity 150ms ease, transform 150ms ease;
+    }
+    .jump.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
+
+    /* ===== Composer (with inline attach) ===== */
+    .composer { flex: 0 0 auto; padding: 12px 16px 14px; border-top: 1px solid var(--line); }
+    .upload-strip {
+      display: none; align-items: center; gap: 10px; margin-bottom: 9px; padding: 8px 11px;
+      background: var(--panel-2); border: 1px solid var(--line-bright); border-radius: 10px;
+      font-family: var(--mono); font-size: 11.5px; color: var(--ink-dim);
+    }
+    .upload-strip.show { display: flex; }
+    .upload-strip .fname { color: var(--signal); }
+    .upload-strip .bar { flex: 1 1 auto; height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; }
+    .upload-strip .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--phosphor), var(--signal)); transition: width 180ms ease; }
+    /* Server-side phase (extract + embed + index): the bar holds at ~85% with a
+       moving sheen so the wait reads as active work, not a freeze. */
+    .upload-strip.processing .bar i { background-image: linear-gradient(90deg, var(--signal), var(--phosphor), var(--signal)); background-size: 200% 100%; animation: sheen 1.1s linear infinite; }
+    @keyframes sheen { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+    .upload-strip .x { cursor: pointer; color: var(--ink-faint); border: 0; background: none; font-size: 14px; }
+    .upload-strip .x:hover { color: var(--rose); }
+
+    .field {
+      display: flex; align-items: flex-end; gap: 8px;
+      background: var(--bg); border: 1px solid var(--line-bright); border-radius: 12px; padding: 7px 7px 7px 8px;
+      transition: border-color 130ms ease, box-shadow 130ms ease;
+    }
+    .field.drag { border-color: var(--phosphor); box-shadow: 0 0 0 3px rgba(90,242,176,0.12); }
+    .field:focus-within { border-color: var(--phosphor); box-shadow: 0 0 0 3px rgba(90,242,176,0.12); }
+    .icon-btn {
+      flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; cursor: pointer;
+      border: 1px solid var(--line-bright); background: var(--panel-2); color: var(--ink-dim);
+      font-size: 16px; display: grid; place-items: center; transition: all 120ms ease;
+    }
+    .icon-btn:hover:not(:disabled) { color: var(--phosphor); border-color: var(--phosphor); }
+    .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    textarea#input {
+      flex: 1 1 auto; resize: none; border: none; outline: none; background: transparent;
+      color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5;
+      max-height: 150px; min-height: 24px; padding: 7px 2px;
+    }
+    textarea#input::placeholder { color: var(--ink-faint); }
+    .send-btn {
+      flex: 0 0 auto; width: 38px; height: 38px; border-radius: 10px; cursor: pointer;
+      border: none; background: linear-gradient(150deg, var(--phosphor), var(--signal));
+      color: #06231a; font-size: 18px; display: grid; place-items: center; transition: transform 120ms ease, filter 120ms ease;
+    }
+    .send-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .composer .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 7px; font-family: var(--mono); font-size: 11px; color: var(--ink-faint); }
+    .composer .foot .over { color: var(--rose); }
+
+    /* ===== Side rail (telemetry + event log), viewport-height ===== */
+    .side { display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+    .metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+    .metric { background: var(--panel); padding: 11px 14px; }
+    .metric .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--ink-faint); display: flex; align-items: center; gap: 5px; }
+    .metric .v { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--ink); margin-top: 2px; }
+    .metric .v small { font-size: 10.5px; color: var(--ink-faint); font-weight: 400; }
+    /* Info badge with an accessible hover/focus tooltip (no JS, no deps). */
+    .info {
+      position: relative; display: inline-grid; place-items: center; cursor: help;
+      width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+      border: 1px solid var(--line-bright); color: var(--ink-faint);
+      font-family: var(--sans); font-size: 9px; font-weight: 700; font-style: italic;
+    }
+    .info:hover, .info:focus { color: var(--signal); border-color: var(--signal); outline: none; }
+    /* The tooltip is position:fixed (positioned by JS) so it escapes the card's
+       overflow:hidden clipping and can flip below the badge near the top edge. */
+    .info .tip {
+      position: fixed; left: 0; top: 0; width: 212px; z-index: 9999;
+      pointer-events: none; opacity: 0; transition: opacity 130ms ease;
+      background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line-bright); border-radius: 9px;
+      padding: 9px 11px; font-family: var(--sans); font-size: 11.5px; font-weight: 400; font-style: normal;
+      line-height: 1.45; letter-spacing: 0; text-transform: none; text-align: left; box-shadow: var(--shadow);
+    }
+    .info .tip.show { opacity: 1; }
+    .info .tip::after { content: ""; position: absolute; left: var(--arrow-left, 50%); transform: translateX(-50%); border: 6px solid transparent; }
+    .info .tip.above::after { top: 100%; border-top-color: var(--line-bright); }
+    .info .tip.below::after { bottom: 100%; border-bottom-color: var(--line-bright); }
+
+    .log-card { flex: 1 1 auto; min-height: 120px; }
+    #log { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 8px 13px; font-family: var(--mono); font-size: 11px; line-height: 1.6; }
+    #log::-webkit-scrollbar { width: 8px; }
+    #log::-webkit-scrollbar-thumb { background: var(--line-bright); border-radius: 8px; }
+    .logline { display: flex; gap: 9px; padding: 1px 0; }
+    .logline .t { color: var(--ink-faint); flex: 0 0 auto; }
+    .logline .g { font-weight: 700; flex: 0 0 auto; min-width: 60px; }
+    .logline .m { color: var(--ink-dim); word-break: break-word; }
+    .logline.recv .g { color: var(--signal); }
+    .logline.send .g { color: var(--violet); }
+    .logline.life .g { color: var(--phosphor); }
+    .logline.warn .g { color: var(--amber); }
+    .logline.err .g { color: var(--rose); }
+
+    .controls { flex: 0 0 auto; display: flex; gap: 8px; padding: 10px 13px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+    .controls button {
+      font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
+      padding: 7px 11px; border-radius: 8px; cursor: pointer; background: var(--panel-2);
+      color: var(--ink-dim); border: 1px solid var(--line-bright); transition: all 120ms ease;
+    }
+    .controls button:hover:not(:disabled) { color: var(--ink); border-color: var(--signal); }
+    .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+    /* ===== Mobile / narrow: stack and allow page scroll ===== */
+    @media (max-width: 980px) {
+      body { overflow: auto; }
+      .app { height: auto; min-height: 100vh; }
+      main.layout { grid-template-columns: 1fr; }
+      .transcript-wrap { height: 56vh; }
+      .side { height: auto; }
+      .log-card { height: 240px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="bar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <h1>Private Real-Time AI Agent<span>Amazon CloudFront · WebSocket VPC Origins · Amazon OpenSearch Serverless</span></h1>
+      </div>
+      <span class="spacer"></span>
+      <div class="chip-row">
+        <span class="status-pill" id="state" data-state="closed" role="status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span><span id="state-text">closed</span>
+        </span>
+        <button class="ghost-btn" id="reconnect-btn" type="button">reconnect</button>
+        <button class="ghost-btn" id="theme-btn" type="button" title="Toggle light / dark" aria-label="Toggle theme">◐ theme</button>
+        <button class="ghost-btn" id="logout-btn" type="button" style="display:none;">sign out</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <!-- Conversation (fills the viewport; only the transcript scrolls) -->
+      <section class="card chat" aria-label="Conversation">
+        <div class="card-head"><span>// conversation</span><span class="accent" id="endpoint-label">/ws/</span></div>
+
+        <div class="transcript-wrap">
+          <div id="transcript" role="log" aria-live="polite">
+            <div class="empty-state" id="empty-state">
+              <div class="big">Example Corp Contract Review Agent — review a contract against our SOPs.</div>
+              <div class="sub">Pick a starter, type below, or attach a contract (📎) to run a full live review.</div>
+              <div class="starters" id="starters"></div>
+            </div>
+          </div>
+          <button class="jump" id="jump" type="button">↓ jump to latest</button>
+        </div>
+
+        <div class="composer">
+          <div class="upload-strip" id="upload-strip">
+            <span id="upload-msg">Uploading…</span>
+            <span class="bar"><i id="upload-bar-fill"></i></span>
+            <button class="x" id="upload-clear" type="button" title="Dismiss" aria-label="Dismiss">✕</button>
+          </div>
+          <div class="field" id="field">
+            <button class="icon-btn" id="attach" type="button" title="Attach a document to audit" aria-label="Attach a document">📎</button>
+            <input type="file" id="file" accept=".pdf,.docx,.txt,.md,.markdown" class="visually-hidden" />
+            <textarea id="input" rows="1" placeholder="Message the agent…  (Enter to send · Shift+Enter for newline)" aria-label="Message"></textarea>
+            <button class="send-btn" id="send" type="button" title="Send" aria-label="Send">↗</button>
+          </div>
+          <div class="foot">
+            <span id="hint">streaming over WSS · responses appear live · 📎 to audit a document</span>
+            <span id="counter">0 / 4000</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Side rail: telemetry + event log -->
+      <aside class="side">
+        <section class="card" aria-label="Telemetry" style="flex:0 0 auto;">
+          <div class="card-head"><span>// telemetry</span><span class="accent">wss</span></div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="k">connect
+                <span class="info" tabindex="0">i<span class="tip">Time to open the WebSocket to the proxy (the browser→CloudFront→ALB→proxy handshake).</span></span>
+              </div>
+              <div class="v" id="m-connect">— <small>ms</small></div>
+            </div>
+            <div class="metric">
+              <div class="k">first chunk
+                <span class="info" tabindex="0">i<span class="tip">Time-to-first-chunk: how long after you send until the first piece of the answer arrives. Includes any agent cold start.</span></span>
+              </div>
+              <div class="v" id="m-ttft">— <small>ms</small></div>
+            </div>
+            <div class="metric">
+              <div class="k">total
+                <span class="info" tabindex="0">i<span class="tip">Total time for the full response — from sending your message until the stream completes.</span></span>
+              </div>
+              <div class="v" id="m-total">— <small>ms</small></div>
+            </div>
+            <div class="metric">
+              <div class="k">stream chunks
+                <span class="info" tabindex="0">i<span class="tip">A chunk is one WebSocket frame carrying a slice of the answer as it's generated. The proxy re-emits the agent's live token stream as these frames. Not the same as model tokens.</span></span>
+              </div>
+              <div class="v" id="m-chunks">0</div>
+            </div>
+            <div class="metric">
+              <div class="k">chunks/sec
+                <span class="info" tabindex="0">i<span class="tip">Streaming throughput: stream chunks received per second once the response started flowing.</span></span>
+              </div>
+              <div class="v" id="m-cps">—</div>
+            </div>
+            <div class="metric">
+              <div class="k">last pong
+                <span class="info" tabindex="0">i<span class="tip">Round-trip latency of the most recent keep-alive ping/pong over the WebSocket.</span></span>
+              </div>
+              <div class="v" id="m-rtt">— <small>ms</small></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card log-card" aria-label="Event log">
+          <div class="card-head"><span>// event log</span></div>
+          <div id="log"></div>
+          <div class="controls">
+            <button id="ping-btn" type="button" disabled>send ping</button>
+            <button id="clear-log-btn" type="button">clear log</button>
+            <button id="clear-chat-btn" type="button">clear chat</button>
+          </div>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+  "use strict";
+  (function () {
+    var QUERY_MAX = 4000;
+    var OPEN_TIMEOUT_MS = 10000;
+    var CLIENT_PING_MS = 25000;
+    var WATCHDOG_MS = 60000;
+    var STICK_THRESHOLD_PX = 80;   // treat "within 80px of bottom" as pinned
+
+    var $ = function (id) { return document.getElementById(id); };
+    var els = {
+      state: $("state"), stateText: $("state-text"),
+      reconnect: $("reconnect-btn"), logout: $("logout-btn"), theme: $("theme-btn"),
+      starters: $("starters"), emptyState: $("empty-state"),
+      transcript: $("transcript"), jump: $("jump"),
+      field: $("field"), attach: $("attach"), file: $("file"),
+      input: $("input"), send: $("send"), hint: $("hint"), counter: $("counter"),
+      uploadStrip: $("upload-strip"), uploadMsg: $("upload-msg"),
+      uploadBar: $("upload-bar-fill"), uploadClear: $("upload-clear"),
+      mConnect: $("m-connect"), mTtft: $("m-ttft"), mTotal: $("m-total"),
+      mChunks: $("m-chunks"), mCps: $("m-cps"), mRtt: $("m-rtt"),
+      log: $("log"), ping: $("ping-btn"), clearLog: $("clear-log-btn"), clearChat: $("clear-chat-btn"),
+      endpointLabel: $("endpoint-label")
+    };
+
+    var STARTERS = [
+      { lead: "FINANCIAL TERMS", text: "A partner contract proposes a 50% upfront payment and an 18% compound late fee. Review these financial terms against the Example Corp SOPs." },
+      { lead: "LIABILITY & RISK", text: "What does Example Corp require for liability caps, indemnification, and termination notice in a partner contract?" },
+      { lead: "REVIEW A CONTRACT", text: "How do I submit a contract for review, and what does your findings report include?" }
+    ];
+
+    function wsEndpoint() {
+      var proto = (location.protocol === "https:") ? "wss:" : "ws:";
+      return proto + "//" + location.host + "/ws/";
+    }
+    var WS_URL = wsEndpoint();
+
+    // ---- Minimal, dependency-free, XSS-safe Markdown renderer ----
+    // The SPA ships zero external/CDN deps (it runs fully private behind
+    // CloudFront), so we render a practical Markdown subset inline. Strategy:
+    // HTML-escape the WHOLE input FIRST, then transform the escaped text — so no
+    // attacker-supplied markup can ever inject live HTML. Supports: headings,
+    // bold/italic, inline code, fenced + indented code blocks, links, blockquotes,
+    // hr, and nested ordered/unordered lists.
+    function escapeHtml(s) {
+      return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function mdInline(s) {
+      // Inline code first (protect its contents from other rules).
+      var parts = s.split(/(`[^`]+`)/g);
+      for (var i = 0; i < parts.length; i++) {
+        if (i % 2 === 1) { parts[i] = "<code>" + parts[i].slice(1, -1) + "</code>"; continue; }
+        var t = parts[i];
+        // links [text](url) — only http(s)/mailto, rendered safely.
+        t = t.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, txt, url) {
+          if (/^(https?:|mailto:)/i.test(url)) {
+            return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + txt + "</a>";
+          }
+          return txt;
+        });
+        t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        t = t.replace(/__([^_]+)__/g, "<strong>$1</strong>");
+        t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
+        t = t.replace(/(^|[^_])_([^_\n]+)_/g, "$1<em>$2</em>");
+        parts[i] = t;
+      }
+      return parts.join("");
+    }
+    function renderMarkdown(src) {
+      var text = escapeHtml(src == null ? "" : ("" + src));
+      var lines = text.split("\n");
+      var out = [], i = 0;
+      // listStack: entries {type:'ul'|'ol', indent:n}
+      var listStack = [];
+      function closeDeeperThan(indent) {
+        // Close only lists strictly deeper than `indent` (keep same-level open
+        // so consecutive sibling items share one list).
+        while (listStack.length && listStack[listStack.length - 1].indent > indent) {
+          out.push("</" + listStack.pop().type + ">");
+        }
+      }
+      function closeAllLists() { while (listStack.length) out.push("</" + listStack.pop().type + ">"); }
+
+      while (i < lines.length) {
+        var line = lines[i];
+
+        // fenced code block ``` ```
+        var fence = line.match(/^\s*```(.*)$/);
+        if (fence) {
+          closeAllLists();
+          var buf = []; i++;
+          while (i < lines.length && !/^\s*```\s*$/.test(lines[i])) { buf.push(lines[i]); i++; }
+          i++; // skip closing fence
+          out.push("<pre><code>" + buf.join("\n") + "</code></pre>");
+          continue;
+        }
+        // horizontal rule
+        if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(line)) { closeAllLists(); out.push("<hr>"); i++; continue; }
+        // blank line ends paragraphs/lists grouping
+        if (/^\s*$/.test(line)) { closeAllLists(); i++; continue; }
+        // heading
+        var h = line.match(/^\s*(#{1,6})\s+(.*)$/);
+        if (h) { closeAllLists(); var lvl = Math.min(h[1].length, 4); out.push("<h" + lvl + ">" + mdInline(h[2]) + "</h" + lvl + ">"); i++; continue; }
+        // blockquote (input is already HTML-escaped, so ">" is "&gt;")
+        if (/^\s*&gt;\s?/.test(line)) {
+          closeAllLists();
+          var q = [];
+          while (i < lines.length && /^\s*&gt;\s?/.test(lines[i])) { q.push(lines[i].replace(/^\s*&gt;\s?/, "")); i++; }
+          out.push("<blockquote>" + mdInline(q.join(" ")) + "</blockquote>");
+          continue;
+        }
+        // list item (ordered or unordered), indent-aware
+        var li = line.match(/^(\s*)([-*+]|\d+[.)])\s+(.*)$/);
+        if (li) {
+          var indent = li[1].length;
+          var type = /^\d/.test(li[2]) ? "ol" : "ul";
+          // Close any lists deeper than this indent.
+          closeDeeperThan(indent);
+          var top = listStack.length ? listStack[listStack.length - 1] : null;
+          if (!top || indent > top.indent) {
+            // Open a nested list one level deeper.
+            out.push("<" + type + ">"); listStack.push({ type: type, indent: indent });
+          } else if (top.indent === indent && top.type !== type) {
+            // Same level but the marker switched (ul<->ol): reopen as the new type.
+            out.push("</" + listStack.pop().type + ">");
+            out.push("<" + type + ">"); listStack.push({ type: type, indent: indent });
+          }
+          // else: same level, same type -> reuse the open list (siblings).
+          out.push("<li>" + mdInline(li[3]) + "</li>");
+          i++; continue;
+        }
+        // paragraph (gather consecutive plain lines)
+        closeAllLists();
+        var para = [line];
+        i++;
+        while (i < lines.length && !/^\s*$/.test(lines[i]) &&
+               !/^\s*(#{1,6})\s/.test(lines[i]) && !/^\s*([-*+]|\d+[.)])\s/.test(lines[i]) &&
+               !/^\s*&gt;/.test(lines[i]) && !/^\s*```/.test(lines[i])) {
+          para.push(lines[i]); i++;
+        }
+        out.push("<p>" + mdInline(para.join(" ")) + "</p>");
+      }
+      closeAllLists();
+      return out.join("");
+    }
+
+    // ---- State ----
+    var ws = null, displayState = "closed";
+    var openTimer = null, pingTimer = null, watchdog = null, lastMsgAt = 0;
+    var awaiting = false, gotFirst = false, chunkCount = 0, lastSeq = -1;
+    var connectAt = 0, sentAt = 0, firstAt = 0;
+    var pendingSend = null;          // {kind:'query'|'audit', payload}
+    var currentAgentBubble = null;   // DOM node receiving the stream
+    var currentAgentText = "";
+    var lastUpload = null;           // {documentId, textKey, filename}
+    var conversationStarted = false; // controls the starter prompts
+    var stick = true;                // sticky-scroll: follow the stream?
+    var currentIsAudit = false;      // is the active stream a document audit?
+    var auditStatusNode = null;      // the in-chat "⏳ Auditing…" node to resolve
+
+    // ---- Logging ----
+    function pad(n, w) { n = "" + n; while (n.length < w) n = "0" + n; return n; }
+    function stamp() { var d = new Date(); return pad(d.getHours(),2)+":"+pad(d.getMinutes(),2)+":"+pad(d.getSeconds(),2)+"."+pad(d.getMilliseconds(),3); }
+    function log(level, tag, msg) {
+      var row = document.createElement("div"); row.className = "logline " + level;
+      var t = document.createElement("span"); t.className = "t"; t.textContent = stamp();
+      var g = document.createElement("span"); g.className = "g"; g.textContent = tag;
+      var m = document.createElement("span"); m.className = "m"; m.textContent = msg == null ? "" : ("" + msg);
+      row.appendChild(t); row.appendChild(g); row.appendChild(m);
+      els.log.appendChild(row); els.log.scrollTop = els.log.scrollHeight;
+    }
+
+    // ---- Connection state ----
+    var VALID = { connecting:1, open:1, closing:1, closed:1, failed:1 };
+    function setState(s) {
+      if (!VALID[s]) return;
+      displayState = s; els.state.setAttribute("data-state", s); els.stateText.textContent = s;
+      var open = ws && ws.readyState === WebSocket.OPEN;
+      els.ping.disabled = !open;
+      els.reconnect.disabled = !!(ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING));
+      els.send.disabled = !open;
+    }
+
+    // ---- Sticky scroll (let the user scroll up & read mid-stream) ----
+    function isPinned() {
+      var t = els.transcript;
+      return (t.scrollHeight - t.scrollTop - t.clientHeight) <= STICK_THRESHOLD_PX;
+    }
+    function scrollToBottom(force) {
+      if (force || stick) { els.transcript.scrollTop = els.transcript.scrollHeight; }
+    }
+    function pinToBottom() { stick = true; els.transcript.scrollTop = els.transcript.scrollHeight; els.jump.classList.remove("show"); }
+    els.transcript.addEventListener("scroll", function () {
+      stick = isPinned();
+      // Only advertise "jump to latest" while a response is actively streaming.
+      els.jump.classList.toggle("show", !stick && awaiting);
+    });
+    els.jump.addEventListener("click", pinToBottom);
+
+    // ---- Starters visibility ----
+    function hideStarters() {
+      if (els.emptyState) { els.emptyState.remove(); els.emptyState = null; }
+      conversationStarted = true;
+    }
+    function buildStarters() {
+      if (!els.starters) return;
+      els.starters.innerHTML = "";
+      STARTERS.forEach(function (s) {
+        var b = document.createElement("button"); b.className = "starter"; b.type = "button";
+        b.innerHTML = '<span class="lead">' + s.lead + '</span>' + s.text;
+        b.addEventListener("click", function () {
+          if (awaiting) return;
+          els.input.value = s.text; updateCounter(); autosize(); submitQuery();
+        });
+        els.starters.appendChild(b);
+      });
+    }
+
+    // ---- Transcript helpers ----
+    function addMessage(role, text, metaText) {
+      hideStarters();
+      var msg = document.createElement("div"); msg.className = "msg " + role;
+      if (role !== "system") {
+        var av = document.createElement("div"); av.className = "avatar";
+        av.textContent = role === "user" ? "you" : "ai";
+        msg.appendChild(av);
+      }
+      var col = document.createElement("div");
+      var bubble = document.createElement("div"); bubble.className = "bubble"; bubble.textContent = text;
+      col.appendChild(bubble);
+      if (metaText) { var meta = document.createElement("div"); meta.className = "meta"; meta.textContent = metaText; col.appendChild(meta); }
+      msg.appendChild(col);
+      els.transcript.appendChild(msg);
+      pinToBottom();              // a new message is user-intent → jump down
+      return { msg: msg, bubble: bubble, col: col };
+    }
+    function addSystem(text, kind) {
+      var n = addMessage("system", text, null);
+      if (kind) n.msg.classList.add(kind);
+      return n;
+    }
+
+    // ---- Metrics ----
+    function setMetric(el, v, unit) { el.innerHTML = (v == null ? "— " : v + " ") + (unit ? "<small>"+unit+"</small>" : ""); }
+
+    // ---- Composer ----
+    function updateCounter() {
+      var n = els.input.value.length;
+      els.counter.textContent = n + " / " + QUERY_MAX;
+      els.counter.classList.toggle("over", n > QUERY_MAX);
+    }
+    function autosize() { els.input.style.height = "auto"; els.input.style.height = Math.min(els.input.scrollHeight, 150) + "px"; }
+    els.input.addEventListener("input", function () { updateCounter(); autosize(); });
+    els.input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitQuery(); }
+    });
+    els.send.addEventListener("click", submitQuery);
+
+    function submitQuery() {
+      var text = els.input.value.trim();
+      if (!text) return;
+      if (text.length > QUERY_MAX) { addSystem("Message exceeds " + QUERY_MAX + " characters.", "error"); return; }
+      addMessage("user", text, stamp());
+      els.input.value = ""; updateCounter(); autosize();
+      beginAgentResponse(false);
+      sendOrQueue({ kind: "query", payload: { query: text } });
+    }
+
+    function beginAgentResponse(isAudit) {
+      awaiting = true; gotFirst = false; chunkCount = 0; lastSeq = -1; currentAgentText = "";
+      currentIsAudit = !!isAudit; auditStatusNode = null;
+      setMetric(els.mTtft, null, "ms"); setMetric(els.mTotal, null, "ms"); els.mChunks.textContent = "0"; setMetric(els.mCps, null, "");
+      var n = addMessage("agent", "", null);
+      n.msg.classList.add("streaming");
+      currentAgentBubble = n;
+      sentAt = performance.now();
+    }
+
+    function sendOrQueue(item) {
+      if (ws && ws.readyState === WebSocket.OPEN) { doSend(item); }
+      else { pendingSend = item; log("warn", "QUEUE", "socket not open; will send on connect"); connect(); }
+    }
+    function doSend(item) {
+      try {
+        ws.send(JSON.stringify(item.payload));
+        awaiting = true;
+        if (item.kind === "audit") log("send", "AUDIT", "requested full document audit");
+        else log("send", "QUERY", JSON.stringify(item.payload.query).slice(0, 60));
+      } catch (e) { addSystem("Failed to send: " + e, "error"); }
+    }
+
+    // ---- Incoming WS messages ----
+    function onMessage(ev) {
+      lastMsgAt = Date.now();
+      var data; try { data = JSON.parse(ev.data); } catch (e) { return; }
+      switch (data.type) {
+        case "welcome": return onWelcome(data);
+        case "status": return onStatus(data);
+        case "token": return onToken(data);
+        case "complete": return onComplete(data);
+        case "error": return onError(data);
+        case "ping": return onServerPing(data);
+        case "pong": return onPong(data);
+      }
+    }
+    function onWelcome(d) { log("life", "WELCOME", "conn " + (d.connectionId || "?").slice(0,8)); if (pendingSend) { var p = pendingSend; pendingSend = null; doSend(p); } }
+    function onStatus(d) {
+      if (d.phase === "auditing") {
+        // Track this node so we can resolve it to "complete" at the end.
+        auditStatusNode = addSystem("⏳ " + (d.message || "Auditing the document section by section…"), "working");
+      }
+      log("recv", "STATUS", (d.phase || "") + " · " + (d.message || ""));
+    }
+    function onToken(d) {
+      var content = (typeof d.content === "string") ? d.content : "";
+      if (typeof d.seq === "number") { if (d.seq <= lastSeq) log("warn", "SEQ", "dup/out-of-order " + d.seq); lastSeq = d.seq; }
+      if (!gotFirst) {
+        gotFirst = true; firstAt = performance.now();
+        if (sentAt) setMetric(els.mTtft, Math.round(firstAt - sentAt), "ms");
+      }
+      currentAgentText += content; chunkCount += 1;
+      if (currentAgentBubble) {
+        currentAgentBubble.bubble.classList.add("md");
+        currentAgentBubble.bubble.innerHTML = renderMarkdown(currentAgentText);
+      }
+      els.mChunks.textContent = "" + chunkCount;
+      scrollToBottom(false);     // only follows if the user is pinned to bottom
+    }
+    function onComplete(d) {
+      awaiting = false;
+      els.jump.classList.remove("show");
+      if (currentAgentBubble) {
+        currentAgentBubble.msg.classList.remove("streaming");
+        var meta = document.createElement("div"); meta.className = "meta";
+        var total = sentAt ? Math.round(performance.now() - sentAt) : null;
+        meta.textContent = "agent · " + chunkCount + " chunks" + (total != null ? " · " + total + " ms" : "");
+        currentAgentBubble.col.appendChild(meta);
+      }
+      // Resolve the audit status line from "⏳ Auditing…" to "✓ complete".
+      if (currentIsAudit && auditStatusNode) {
+        var secs = sentAt ? ((performance.now() - sentAt) / 1000).toFixed(1) : null;
+        auditStatusNode.msg.classList.remove("working");
+        auditStatusNode.msg.classList.add("done");
+        auditStatusNode.bubble.textContent = "✓ Audit complete — " + chunkCount + " chunks streamed"
+          + (secs != null ? " in " + secs + "s" : "");
+      }
+      currentIsAudit = false; auditStatusNode = null;
+      var total2 = sentAt ? Math.round(performance.now() - sentAt) : null;
+      if (total2 != null) setMetric(els.mTotal, total2, "ms");
+      if (firstAt && chunkCount > 0) { var g = performance.now() - firstAt; if (g > 0) setMetric(els.mCps, (chunkCount/(g/1000)).toFixed(1), ""); }
+      log("recv", "COMPLETE", "chunks=" + (d.tokenCount != null ? d.tokenCount : chunkCount) + (total2 != null ? " total=" + total2 + "ms" : ""));
+      currentAgentBubble = null;
+      scrollToBottom(false);
+      refreshAuditButtons();
+    }
+    function onError(d) {
+      awaiting = false;
+      els.jump.classList.remove("show");
+      if (currentAgentBubble) { currentAgentBubble.msg.remove(); currentAgentBubble = null; }
+      if (currentIsAudit && auditStatusNode) {
+        auditStatusNode.msg.classList.remove("working");
+        auditStatusNode.msg.classList.add("error");
+        auditStatusNode.bubble.textContent = "✗ Audit interrupted — " + (d.message || "error");
+      }
+      currentIsAudit = false; auditStatusNode = null;
+      addSystem("⚠ " + (d.message || "error") + (d.code ? " (" + d.code + ")" : ""), "error");
+      log("err", "ERROR", (d.code || "") + " · " + (d.message || ""));
+      if (d.code === "unauthorized") { setTimeout(function(){ location.href = "/auth/login"; }, 1200); }
+      refreshAuditButtons();
+    }
+    function onServerPing(d) { try { ws.send(JSON.stringify({ type:"pong", t:d.t })); } catch(e){} }
+    function onPong(d) { if (d.t) setMetric(els.mRtt, Math.max(0, Date.now() - d.t), "ms"); }
+
+    // ---- Connection lifecycle ----
+    function connect() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
+      setState("connecting"); connectAt = performance.now();
+      log("life", "CONNECT", WS_URL);
+      try { ws = new WebSocket(WS_URL); } catch (e) { setState("failed"); log("err","CONNECT", e); return; }
+      openTimer = setTimeout(function () {
+        if (ws && ws.readyState === WebSocket.CONNECTING) { log("err","TIMEOUT","open >"+(OPEN_TIMEOUT_MS/1000)+"s"); setState("failed"); try{ws.close();}catch(e){} }
+      }, OPEN_TIMEOUT_MS);
+      ws.onopen = function () {
+        clearTimeout(openTimer); setState("open");
+        setMetric(els.mConnect, Math.round(performance.now() - connectAt), "ms");
+        log("life","OPEN","socket open"); startPing(); startWatchdog();
+      };
+      ws.onmessage = onMessage;
+      ws.onclose = function (ev) { clearTimeout(openTimer); stopPing(); stopWatchdog(); setState(displayState === "failed" ? "failed" : "closed"); log("life","CLOSE","code "+ev.code); if (awaiting && currentAgentBubble) { onError({message:"connection closed mid-response"}); } };
+      ws.onerror = function () { log("err","SOCKET","error"); };
+    }
+    function sendPing(src) { if (ws && ws.readyState === WebSocket.OPEN) { try { ws.send(JSON.stringify({ type:"ping", t: Date.now() })); log("send","PING",src||""); } catch(e){} } }
+    function startPing() { stopPing(); pingTimer = setInterval(function(){ if (ws && ws.readyState===WebSocket.OPEN && !awaiting) sendPing("auto"); }, CLIENT_PING_MS); }
+    function stopPing() { if (pingTimer) { clearInterval(pingTimer); pingTimer = null; } }
+    function startWatchdog() { stopWatchdog(); lastMsgAt = Date.now(); watchdog = setInterval(function(){ if (!ws || ws.readyState!==WebSocket.OPEN) return; if (Date.now()-lastMsgAt > WATCHDOG_MS) { log("warn","WATCHDOG","no message >"+(WATCHDOG_MS/1000)+"s"); } }, 5000); }
+    function stopWatchdog() { if (watchdog) { clearInterval(watchdog); watchdog = null; } }
+
+    els.reconnect.addEventListener("click", connect);
+    els.ping.addEventListener("click", function(){ sendPing("manual"); });
+
+    // ---- Theme (light / dark) toggle, persisted ----
+    function applyTheme(t) {
+      if (t === "light") { document.documentElement.setAttribute("data-theme", "light"); els.theme.textContent = "◑ light"; }
+      else { document.documentElement.removeAttribute("data-theme"); els.theme.textContent = "◐ dark"; }
+    }
+    var savedTheme = "dark";
+    try { savedTheme = localStorage.getItem("prra-theme") || "dark"; } catch (e) {}
+    applyTheme(savedTheme);
+    els.theme.addEventListener("click", function () {
+      var next = document.documentElement.getAttribute("data-theme") === "light" ? "dark" : "light";
+      applyTheme(next);
+      try { localStorage.setItem("prra-theme", next); } catch (e) {}
+    });
+
+    // ---- Info tooltips: position:fixed so they escape card overflow:hidden,
+    // flipping below the badge when there isn't room above (e.g. near the top). ----
+    function placeTip(badge) {
+      var tip = badge.querySelector(".tip");
+      if (!tip) return;
+      tip.classList.add("show");
+      var br = badge.getBoundingClientRect();
+      var tr = tip.getBoundingClientRect();
+      var margin = 8, pad = 6;
+      var below = br.top < (tr.height + margin + 4);   // not enough room above?
+      var top = below ? (br.bottom + margin) : (br.top - tr.height - margin);
+      var left = br.left + br.width / 2 - tr.width / 2; // center on the badge
+      left = Math.max(pad, Math.min(left, window.innerWidth - tr.width - pad));
+      tip.style.left = Math.round(left) + "px";
+      tip.style.top = Math.round(top) + "px";
+      tip.classList.toggle("below", below);
+      tip.classList.toggle("above", !below);
+      // Point the arrow at the badge center even after edge-clamping.
+      tip.style.setProperty("--arrow-left", Math.round(br.left + br.width / 2 - left) + "px");
+    }
+    function hideTip(badge) { var tip = badge.querySelector(".tip"); if (tip) tip.classList.remove("show"); }
+    (function wireTooltips() {
+      var badges = document.querySelectorAll(".info");
+      for (var i = 0; i < badges.length; i++) {
+        (function (b) {
+          b.addEventListener("mouseenter", function () { placeTip(b); });
+          b.addEventListener("mouseleave", function () { hideTip(b); });
+          b.addEventListener("focus", function () { placeTip(b); });
+          b.addEventListener("blur", function () { hideTip(b); });
+        })(badges[i]);
+      }
+    })();
+    els.clearLog.addEventListener("click", function(){ els.log.innerHTML = ""; });
+    els.clearChat.addEventListener("click", function(){
+      els.transcript.innerHTML = "";
+      var e = document.createElement("div"); e.className = "empty-state"; e.id = "empty-state";
+      e.innerHTML = '<div class="big">Conversation cleared.</div>'
+        + '<div class="sub">Submit another contract for review, or attach one (📎) to run a full live review.</div>'
+        + '<div class="starters" id="starters"></div>';
+      els.transcript.appendChild(e);
+      els.emptyState = e; els.starters = document.getElementById("starters");
+      conversationStarted = false; buildStarters(); pinToBottom();
+    });
+    els.logout.addEventListener("click", function(){ location.href = "/auth/logout"; });
+
+    // ---- Upload (folded into the composer) + audit ----
+    function refreshAuditButtons() {
+      // Enable/disable any in-chat "Run full live audit" actions.
+      var btns = els.transcript.querySelectorAll(".inline-action[data-audit]");
+      for (var i = 0; i < btns.length; i++) { btns[i].disabled = awaiting || !lastUpload; }
+    }
+    els.attach.addEventListener("click", function(){ els.file.click(); });
+    els.file.addEventListener("change", function(){ if (els.file.files && els.file.files[0]) uploadFile(els.file.files[0]); });
+    els.uploadClear.addEventListener("click", function(){ els.uploadStrip.classList.remove("show"); });
+
+    // Drag a file anywhere onto the composer field to upload it.
+    ["dragover","dragenter"].forEach(function(ev){ els.field.addEventListener(ev, function(e){ e.preventDefault(); els.field.classList.add("drag"); }); });
+    ["dragleave","dragend"].forEach(function(ev){ els.field.addEventListener(ev, function(){ els.field.classList.remove("drag"); }); });
+    els.field.addEventListener("drop", function(e){ e.preventDefault(); els.field.classList.remove("drag"); if (e.dataTransfer.files && e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); });
+
+    function uploadFile(file) {
+      els.uploadStrip.classList.add("show");
+      els.uploadStrip.classList.remove("processing");
+      els.uploadBar.style.width = "0%";
+      els.uploadMsg.innerHTML = 'Uploading <span class="fname">' + file.name + '</span>…';
+      log("send", "UPLOAD", file.name + " (" + Math.round(file.size/1024) + " KB)");
+
+      // Smooth progress model. Browser→server bytes fill 0–55%. The server then
+      // extracts text, embeds with Titan, and bulk-indexes into OpenSearch —
+      // work whose duration we can't measure live, so we CREEP the bar from 55%
+      // asymptotically toward ~95% (slowing as it approaches) so it always
+      // appears to be moving, never frozen and never a sudden jump. On the real
+      // response we ease the last stretch to 100%.
+      var pct = 0, creep = null;
+      function setBar(p) { pct = p; els.uploadBar.style.width = p.toFixed(1) + "%"; }
+      function stopCreep() { if (creep) { clearInterval(creep); creep = null; } }
+      function startCreep() {
+        stopCreep();
+        creep = setInterval(function () {
+          // Approach 95% by a fraction of the remaining distance each tick.
+          if (pct < 95) setBar(pct + Math.max(0.25, (95 - pct) * 0.06));
+        }, 140);
+      }
+      function finishTo100(done) {
+        stopCreep();
+        var step = setInterval(function () {
+          if (pct >= 100) { clearInterval(step); setBar(100); if (done) done(); return; }
+          setBar(Math.min(100, pct + Math.max(1.5, (100 - pct) * 0.35)));
+        }, 30);
+      }
+
+      var form = new FormData(); form.append("file", file);
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/upload");
+      xhr.upload.onprogress = function(e){ if (e.lengthComputable) setBar(Math.min(55, e.loaded/e.total*55)); };
+      xhr.upload.onload = function () {
+        // All bytes sent; the server-side processing phase begins — start the creep.
+        els.uploadStrip.classList.add("processing");
+        if (pct < 55) setBar(55);
+        els.uploadMsg.innerHTML = 'Processing <span class="fname">' + file.name + '</span> — extracting text, embedding &amp; indexing…';
+        startCreep();
+      };
+      xhr.onload = function () {
+        els.uploadStrip.classList.remove("processing");
+        if (xhr.status === 200) {
+          var r = JSON.parse(xhr.responseText);
+          finishTo100(function () {
+            lastUpload = r;
+            els.uploadMsg.innerHTML = 'Ready: <span class="fname">' + (r.filename||"document") + '</span> · ' + (r.chars||0) + ' chars' + (r.indexed ? ' · indexed' : '');
+            log("recv", "UPLOAD", "stored doc " + (r.documentId||"") + (r.indexed?" (indexed)":""));
+            setTimeout(function(){ els.uploadStrip.classList.remove("show"); }, 4000);
+            postAuditOffer(r);
+          });
+        } else if (xhr.status === 401) {
+          stopCreep(); setBar(100);
+          els.uploadMsg.textContent = "Session expired — redirecting to sign in…";
+          setTimeout(function(){ location.href = "/auth/login"; }, 1000);
+        } else {
+          stopCreep();
+          var err = "upload failed"; try { err = JSON.parse(xhr.responseText).error || err; } catch(e){}
+          els.uploadMsg.textContent = "✗ " + err; log("err","UPLOAD", err);
+        }
+      };
+      xhr.onerror = function(){ stopCreep(); els.uploadStrip.classList.remove("processing"); els.uploadMsg.textContent = "✗ network error"; log("err","UPLOAD","network error"); };
+      xhr.send(form);
+      els.file.value = "";   // allow re-uploading the same filename
+    }
+
+    // After an upload, drop an in-chat card offering the live audit.
+    function postAuditOffer(r) {
+      var n = addSystem("📄 Uploaded “" + (r.filename||"document") + "” (" + (r.chars||0) + " chars"
+        + (r.indexed ? ", indexed into OpenSearch" : "") + "). Run a full live audit, or just ask a question about it.", null);
+      var btn = document.createElement("button");
+      btn.className = "inline-action"; btn.type = "button"; btn.setAttribute("data-audit", "1");
+      btn.textContent = "▶ Run full live audit";
+      btn.disabled = awaiting;
+      btn.addEventListener("click", function () { startAudit(r, btn); });
+      n.bubble.appendChild(document.createElement("br"));
+      n.bubble.appendChild(btn);
+      pinToBottom();
+    }
+
+    function startAudit(r, btn) {
+      if (!r || awaiting) return;
+      if (btn) btn.disabled = true;
+      addMessage("user", "Run a full compliance & risk audit of “" + (r.filename||"the document") + "”.", stamp());
+      beginAgentResponse(true);
+      sendOrQueue({ kind: "audit", payload: { type: "audit", textKey: r.textKey, documentId: r.documentId } });
+    }
+
+    // ---- Bootstrap: feature flags + connect ----
+    fetch("/api/config").then(function(r){ return r.json(); }).then(function(cfg){
+      if (cfg && cfg.authEnabled) els.logout.style.display = "";
+      if (cfg && !cfg.uploadsEnabled) { els.attach.style.display = "none"; els.hint.textContent = "streaming over WSS · responses appear live"; }
+    }).catch(function(){});
+
+    els.endpointLabel.textContent = WS_URL.replace(/^wss?:\/\/[^/]+/, "");
+    buildStarters();
+    updateCounter();
+    connect();
+  })();
+  </script>
+</body>
+</html>

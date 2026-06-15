@@ -1,0 +1,24 @@
+# Python dependencies for the OpenSearch seeding/provisioner custom-resource Lambda.
+# These are pip-installed into the Lambda code asset by the CDK bundling step
+# (see opensearch-construct.ts).
+#
+# IMPORTANT: boto3/botocore ARE pinned here (and thus bundled into the package)
+# because the Lambda runtime's built-in boto3 is too old for OpenSearch
+# Serverless NextGen: it knows create_collection_group but rejects the
+# `generation` parameter and scale-to-zero (minIndexingCapacityInOCU=0 / min
+# search=0). A bundled recent boto3 shadows the runtime version on sys.path.
+
+# Recent boto3/botocore with NextGen collection-group support (generation +
+# scale-to-zero capacity limits).
+boto3>=1.40.0,<2.0.0
+botocore>=1.40.0,<2.0.0
+
+# OpenSearch client for indexing into OpenSearch Serverless (aoss).
+# opensearch-py ships AWSV4SignerAuth; requests-aws4auth is a fallback signer.
+opensearch-py>=2.6.0,<3.0.0
+requests-aws4auth>=1.2.3,<2.0.0
+
+# PDF text extraction for the SOP knowledge base. The SOPs are seeded as PDFs
+# (PDF-only knowledge base): the provisioner extracts their text, chunks +
+# embeds it, and indexes it into OpenSearch Serverless NextGen.
+pypdf>=4.2.0,<6.0.0
