@@ -1,4 +1,14 @@
-# Private Real-Time AI Agent — Example Corp Contract Review Agent
+<h1 align="center">Private AI agent with streaming WebSocket over CloudFront VPC Origins and the next generation of OpenSearch Serverless for knowledge retrieval</h1>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT--0-yellow.svg" alt="License: MIT-0"></a>
+  <a href="https://aws.amazon.com/cdk/"><img src="https://img.shields.io/badge/AWS_CDK-TypeScript-blue.svg" alt="AWS CDK"></a>
+  <a href="https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/what-is-bedrock-agentcore.html"><img src="https://img.shields.io/badge/Amazon_Bedrock-AgentCore_Runtime-orange.svg" alt="Amazon Bedrock AgentCore Runtime"></a>
+  <a href="https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless.html"><img src="https://img.shields.io/badge/Amazon_OpenSearch-Serverless_NextGen-005EB8.svg" alt="Amazon OpenSearch Serverless NextGen"></a>
+  <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-working-with.websockets.html"><img src="https://img.shields.io/badge/Amazon_CloudFront-WebSocket_VPC_Origins-purple.svg" alt="Amazon CloudFront WebSocket VPC Origins"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Status-Demo-teal.svg" alt="Status: Demo"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Node.js-20%2B-green.svg" alt="Node.js 20+"></a>
+</p>
 
 A fully private, real-time AI agent that reviews partner contracts against your
 internal Standard Operating Procedures (SOPs). It runs on **Amazon Bedrock
