@@ -1447,6 +1447,17 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         ],
       },
     },
+    "ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170": {
+      "Export": {
+        "Name": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
+      },
+      "Value": {
+        "Fn::GetAtt": [
+          "AgentImageRepoCF614A63",
+          "Arn",
+        ],
+      },
+    },
     "ProxyImageUri": {
       "Value": {
         "Fn::Join": [
@@ -1493,7 +1504,7 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
             {
               "Ref": "ProxyImageRepoBB30DFC4",
             },
-            ":dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
+            ":95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
           ],
         ],
       },
@@ -2986,7 +2997,7 @@ def is_complete(event, context):
             {
               "Name": "IMAGE_TAG",
               "Type": "PLAINTEXT",
-              "Value": "dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
+              "Value": "95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
             },
             {
               "Name": "TARGET_PLATFORM",
@@ -3035,7 +3046,7 @@ def is_complete(event, context):
     }
   }
 }",
-          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8.zip",
+          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6.zip",
           "Type": "S3",
         },
         "TimeoutInMinutes": 30,
@@ -3778,7 +3789,7 @@ def is_complete(event, context):
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8.zip",
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6.zip",
                     ],
                   ],
                 },
@@ -3928,7 +3939,7 @@ def is_complete(event, context):
         "ProxyImageBuildRole70F6F0F8",
       ],
       "Properties": {
-        "ImageTag": "dc1434effe2699c2c664c04a912a766310cbc123c9a7c460e2b020b99ec977b8",
+        "ImageTag": "95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
         "ProjectName": {
           "Ref": "ProxyImageBuild77DEACC0",
         },
@@ -4404,10 +4415,7 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
               ],
               "Effect": "Allow",
               "Resource": {
-                "Fn::GetAtt": [
-                  "AgentImageRepoCF614A63",
-                  "Arn",
-                ],
+                "Fn::ImportValue": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
               },
             },
             {
@@ -4471,6 +4479,17 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
                 ],
               },
               "Sid": "LogStreamAccess",
+            },
+            {
+              "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords",
+                "xray:GetSamplingRules",
+                "xray:GetSamplingTargets",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+              "Sid": "XRayAccess",
             },
             {
               "Action": "cloudwatch:PutMetricData",
@@ -4718,7 +4737,7 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "044257f75f80a555e4dfae36a3ca25a0e7357603aaf2ead9156ff634873a4ccd.zip",
+          "S3Key": "0ccc65b8aab899b5b5a6e8d2abcf13fc2df36b6ac3d0fa450915ea36bb0f0520.zip",
         },
         "Description": "Provisions OpenSearch Serverless NextGen (collection group + policies + collection + index + seed) via the aoss API",
         "Environment": {
