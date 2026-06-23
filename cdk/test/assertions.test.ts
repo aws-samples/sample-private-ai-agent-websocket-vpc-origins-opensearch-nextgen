@@ -250,12 +250,32 @@ describe('DataStack — least-privilege roles (R10.3, R13.3)', () => {
     });
   });
 
-  test('no role carries an unused X-Ray grant (tracing is disabled)', () => {
-    // The L2 AgentCore Runtime construct unconditionally adds an `XRayAccess`
-    // statement to the execution role; RemoveXRayAccessFromRolePolicy strips it
-    // because tracing is off. Assert no xray action survives in any IAM policy.
-    const policies = dataTemplate.findResources('AWS::IAM::Policy');
-    expect(JSON.stringify(policies)).not.toContain('xray:');
+  test('no Fn::GetAtt references a resource missing from the Data template (cross-stack refs must be Fn::ImportValue)', () => {
+    // Regression guard: an aspect that rewrote the execution-role policy once
+    // hid a cross-stack ECR reference from CDK's reference resolver, so the
+    // grantPull Resource rendered as a raw Fn::GetAtt to a Build-stack resource
+    // (AgentImageRepo...) that does not exist in the Data template — which
+    // CloudFormation rejects at deploy time. cdk synth does not catch this, so
+    // assert every Fn::GetAtt target is a resource defined in this template.
+    const tpl = dataTemplate.toJSON() as { Resources?: Record<string, unknown> };
+    const definedIds = new Set(Object.keys(tpl.Resources ?? {}));
+    const dangling: string[] = [];
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) {
+        node.forEach(walk);
+        return;
+      }
+      if (node && typeof node === 'object') {
+        const obj = node as Record<string, unknown>;
+        const getAtt = obj['Fn::GetAtt'];
+        if (Array.isArray(getAtt) && typeof getAtt[0] === 'string' && !definedIds.has(getAtt[0])) {
+          dangling.push(getAtt[0]);
+        }
+        Object.values(obj).forEach(walk);
+      }
+    };
+    walk(tpl.Resources ?? {});
+    expect(dangling).toEqual([]);
   });
 });
 
