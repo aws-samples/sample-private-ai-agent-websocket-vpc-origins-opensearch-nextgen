@@ -21,4 +21,6 @@ requests-aws4auth>=1.2.3,<2.0.0
 # PDF text extraction for the SOP knowledge base. The SOPs are seeded as PDFs
 # (PDF-only knowledge base): the provisioner extracts their text, chunks +
 # embeds it, and indexes it into OpenSearch Serverless NextGen.
-pypdf>=4.2.0,<6.0.0
+# Lower bound is >=6.13.3 to pick up the pypdf DoS fixes (malformed-PDF RAM
+# exhaustion / infinite loops); the old <6.0.0 cap blocked those patches.
+pypdf>=6.13.3,<7.0.0

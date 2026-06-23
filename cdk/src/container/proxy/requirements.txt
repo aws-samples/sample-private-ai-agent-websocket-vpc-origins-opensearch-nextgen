@@ -16,7 +16,9 @@ botocore>=1.40.0,<2.0.0
 python-jose[cryptography]>=3.3.0,<4.0.0
 
 # Document parsing for the live-audit upload feature.
-pypdf>=4.2.0,<6.0.0
+# pypdf lower bound is >=6.13.3 to pick up the DoS fixes (malformed-PDF RAM
+# exhaustion / infinite loops); the old <6.0.0 cap blocked those patches.
+pypdf>=6.13.3,<7.0.0
 python-docx>=1.1.0,<2.0.0
 
 # OpenSearch Serverless ingestion of uploaded documents (RAG persistence).
