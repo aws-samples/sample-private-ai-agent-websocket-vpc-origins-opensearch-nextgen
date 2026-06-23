@@ -26,13 +26,49 @@
  *
  * _Requirements: 6.x (agent host), 7.1, 10.1–10.3, 11.x, 13.3_
  */
-import { CfnResource, Stack } from 'aws-cdk-lib';
+import { Aspects, CfnResource, IAspect, Lazy, Stack } from 'aws-cdk-lib';
 import { aws_bedrockagentcore as agentcore } from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import { Construct } from 'constructs';
+import { Construct, IConstruct } from 'constructs';
 import { AgentConfig } from '../config';
+
+/**
+ * Removes the `XRayAccess` statement that the L2 `agentcore.Runtime` construct
+ * unconditionally adds to the execution role.
+ *
+ * The construct's `addExecutionRolePermissions()` always grants a fixed
+ * observability bundle (logs + X-Ray + CloudWatch metrics) regardless of the
+ * `tracingEnabled` flag — there is no prop to opt out. Since this solution runs
+ * with tracing OFF and no X-Ray VPC endpoint, the `xray:*` grant is dead weight,
+ * so we drop it for least privilege. The other statements (log groups/streams,
+ * CloudWatch metrics, workload identity) are preserved.
+ *
+ * This is an escape hatch: it filters by the construct-defined Sid `XRayAccess`.
+ * If a future `aws-cdk-lib` renames that Sid, this aspect silently no-ops — the
+ * `agentcore-construct` unit test asserting the role carries no `xray:` action
+ * is the guard that would catch it.
+ */
+class RemoveXRayAccessFromRolePolicy implements IAspect {
+  public visit(node: IConstruct): void {
+    if (!(node instanceof iam.CfnPolicy)) {
+      return;
+    }
+    const originalDocument = node.policyDocument;
+    node.policyDocument = Lazy.any({
+      produce: () => {
+        const resolved = Stack.of(node).resolve(originalDocument);
+        if (resolved && Array.isArray(resolved.Statement)) {
+          resolved.Statement = resolved.Statement.filter(
+            (statement: { Sid?: string }) => statement.Sid !== 'XRayAccess',
+          );
+        }
+        return resolved;
+      },
+    });
+  }
+}
 
 /**
  * Props for {@link AgentCoreConstruct}.
@@ -149,7 +185,17 @@ export class AgentCoreConstruct extends Construct {
         OPENSEARCH_TIMEOUT: String(props.config.openSearchTimeout),
       },
       description: 'Strands agent for the Private Real-Time AI Agent (v2, AgentCore)',
-      tracingEnabled: true,
+      // Tracing is intentionally OFF. Enabling it makes AgentCore emit traces
+      // via an `AWS::Logs::Delivery` to X-Ray, which only deploys if the
+      // account/Region has X-Ray Transaction Search enabled (trace segment
+      // destination = CloudWatchLogs). That is an account-wide prerequisite the
+      // default account does NOT meet, so it would break this sample's
+      // out-of-the-box deploy. This demo (private streaming agent + OpenSearch
+      // RAG) does not depend on tracing. To opt in, set this to `true`, re-add
+      // the X-Ray VPC interface endpoint in vpc-construct.ts, and first run
+      // `aws xray update-trace-segment-destination --destination CloudWatchLogs`
+      // (plus the matching CloudWatch Logs resource policy).
+      tracingEnabled: false,
     });
 
     // Named endpoint as the stable invoke target for the proxy.
@@ -158,6 +204,11 @@ export class AgentCoreConstruct extends Construct {
     });
 
     this.runtimeArn = this.runtime.agentRuntimeArn;
+
+    // The L2 Runtime construct just added an unconditional `XRayAccess` grant to
+    // the execution role (see RemoveXRayAccessFromRolePolicy above). Strip it —
+    // tracing is off and there is no X-Ray endpoint, so the grant is unused.
+    Aspects.of(props.executionRole).add(new RemoveXRayAccessFromRolePolicy());
 
     // --- Inbound hardening: resource-based policy (Pattern 3) --------------
     // Defense-in-depth on the AGENT'S OWN inbound surface. By default an

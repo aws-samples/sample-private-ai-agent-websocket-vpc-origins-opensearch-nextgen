@@ -233,10 +233,6 @@ export class VpcConstruct extends Construct {
     // Amazon Bedrock Runtime: private foundation-model inference. (R2.5, R10.2)
     addInterfaceEndpoint('BedrockRuntimeEndpoint', ec2.InterfaceVpcEndpointAwsService.BEDROCK_RUNTIME);
 
-    // X-Ray: the AgentCore Runtime has tracing enabled and runs in VPC-egress
-    // mode, so trace export must traverse a private endpoint (no internet). (R10.1)
-    addInterfaceEndpoint('XRayEndpoint', ec2.InterfaceVpcEndpointAwsService.XRAY);
-
     // Cognito Identity Provider (`com.amazonaws.{region}.cognito-idp`).
     // The proxy enforces login itself and runs in these no-egress isolated
     // subnets, so it MUST reach Cognito privately for two things:

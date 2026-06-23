@@ -56,7 +56,6 @@ describe('NetworkStack — VPC endpoints (R2.5, R2.8, R2.9)', () => {
     'com.amazonaws.us-east-1.ecr.dkr',
     'com.amazonaws.us-east-1.logs',
     'com.amazonaws.us-east-1.bedrock-runtime',
-    'com.amazonaws.us-east-1.xray',
     'com.amazonaws.us-east-1.aoss',
     'com.amazonaws.us-east-1.aoss-data',
     'com.amazonaws.us-east-1.bedrock-agentcore',
@@ -71,8 +70,8 @@ describe('NetworkStack — VPC endpoints (R2.5, R2.8, R2.9)', () => {
     });
   });
 
-  test('nine interface endpoints + one S3 gateway endpoint', () => {
-    networkTemplate.resourceCountIs('AWS::EC2::VPCEndpoint', 10);
+  test('eight interface endpoints + one S3 gateway endpoint', () => {
+    networkTemplate.resourceCountIs('AWS::EC2::VPCEndpoint', 9);
   });
 
   test('no classic managed OpenSearch Serverless VPC endpoint is used', () => {
@@ -249,6 +248,14 @@ describe('DataStack — least-privilege roles (R10.3, R13.3)', () => {
         ]),
       }),
     });
+  });
+
+  test('no role carries an unused X-Ray grant (tracing is disabled)', () => {
+    // The L2 AgentCore Runtime construct unconditionally adds an `XRayAccess`
+    // statement to the execution role; RemoveXRayAccessFromRolePolicy strips it
+    // because tracing is off. Assert no xray action survives in any IAM policy.
+    const policies = dataTemplate.findResources('AWS::IAM::Policy');
+    expect(JSON.stringify(policies)).not.toContain('xray:');
   });
 });
 
