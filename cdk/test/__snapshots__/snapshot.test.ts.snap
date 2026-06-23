@@ -104,9 +104,6 @@ exports[`split-stack snapshots AgentCore stack template matches the stored snaps
       "DependsOn": [
         "AgentCoreRuntimeEndpointlive9B851FAC",
         "AgentCoreRuntime326B478F",
-        "AgentCoreRuntimeTracesDelivery66417300",
-        "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
-        "AgentCoreRuntimeTracesDeliverySource81E435F9",
       ],
       "Properties": {
         "Policy": {
@@ -136,72 +133,6 @@ exports[`split-stack snapshots AgentCore stack template matches the stored snaps
         },
       },
       "Type": "AWS::BedrockAgentCore::ResourcePolicy",
-    },
-    "AgentCoreRuntimeTracesDelivery66417300": {
-      "DependsOn": [
-        "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
-        "AgentCoreRuntimeTracesDeliverySource81E435F9",
-      ],
-      "Properties": {
-        "DeliveryDestinationArn": {
-          "Fn::GetAtt": [
-            "AgentCoreRuntimeTracesDeliveryDest67D5A5B0",
-            "Arn",
-          ],
-        },
-        "DeliverySourceName": {
-          "Ref": "AgentCoreRuntimeTracesDeliverySource81E435F9",
-        },
-      },
-      "Type": "AWS::Logs::Delivery",
-    },
-    "AgentCoreRuntimeTracesDeliveryDest67D5A5B0": {
-      "DependsOn": [
-        "CdkXRayLogsDeliveryPolicyResourcePolicy2C9C91AC",
-      ],
-      "Properties": {
-        "DeliveryDestinationType": "XRAY",
-        "Name": "TestAgentAgentCoreRuntimeTracesDeliveryDest2C2E9BF9",
-      },
-      "Type": "AWS::Logs::DeliveryDestination",
-    },
-    "AgentCoreRuntimeTracesDeliverySource81E435F9": {
-      "Properties": {
-        "LogType": "TRACES",
-        "Name": "TestAgentAgentCoreRuntimeTracesDeliverySourceCE1C08B9",
-        "ResourceArn": {
-          "Fn::GetAtt": [
-            "AgentCoreRuntime326B478F",
-            "AgentRuntimeArn",
-          ],
-        },
-      },
-      "Type": "AWS::Logs::DeliverySource",
-    },
-    "CdkXRayLogsDeliveryPolicyResourcePolicy2C9C91AC": {
-      "Properties": {
-        "PolicyDocument": {
-          "Fn::Join": [
-            "",
-            [
-              "{"Statement":[{"Action":"xray:PutTraceSegments","Condition":{"ForAllValues:ArnLike":{"logs:LogGeneratingResourceArns":["",
-              {
-                "Fn::GetAtt": [
-                  "AgentCoreRuntime326B478F",
-                  "AgentRuntimeArn",
-                ],
-              },
-              ""]},"StringEquals":{"aws:SourceAccount":"123456789012"},"ArnLike":{"aws:SourceArn":"arn:",
-              {
-                "Ref": "AWS::Partition",
-              },
-              ":logs:us-east-1:123456789012:delivery-source:*"}},"Effect":"Allow","Principal":{"Service":"delivery.logs.amazonaws.com"},"Resource":"*"}],"Version":"2012-10-17"}",
-            ],
-          ],
-        },
-        "PolicyName": "TestAgentCdkXRayLogsDeliveryPolicyA578AF16",
-      },
-      "Type": "AWS::XRay::ResourcePolicy",
     },
   },
   "Rules": {
@@ -1513,17 +1444,6 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
             },
             ":9d2ba1362722e7aa130bd5240de9a04c725a9a0252c8b33f9b655d4df421a981",
           ],
-        ],
-      },
-    },
-    "ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170": {
-      "Export": {
-        "Name": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
-      },
-      "Value": {
-        "Fn::GetAtt": [
-          "AgentImageRepoCF614A63",
-          "Arn",
         ],
       },
     },
@@ -4484,7 +4404,10 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
               ],
               "Effect": "Allow",
               "Resource": {
-                "Fn::ImportValue": "TestBuild:ExportsOutputFnGetAttAgentImageRepoCF614A63Arn49996170",
+                "Fn::GetAtt": [
+                  "AgentImageRepoCF614A63",
+                  "Arn",
+                ],
               },
             },
             {
@@ -4548,17 +4471,6 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
                 ],
               },
               "Sid": "LogStreamAccess",
-            },
-            {
-              "Action": [
-                "xray:PutTraceSegments",
-                "xray:PutTelemetryRecords",
-                "xray:GetSamplingRules",
-                "xray:GetSamplingTargets",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-              "Sid": "XRayAccess",
             },
             {
               "Action": "cloudwatch:PutMetricData",
@@ -6225,39 +6137,6 @@ exports[`split-stack snapshots Network stack template matches the stored snapsho
         ],
       },
       "Type": "AWS::IAM::Policy",
-    },
-    "VpcXRayEndpoint7EEF95F3": {
-      "Properties": {
-        "PrivateDnsEnabled": true,
-        "SecurityGroupIds": [
-          {
-            "Fn::GetAtt": [
-              "VpcEndpointSgEE00ED56",
-              "GroupId",
-            ],
-          },
-        ],
-        "ServiceName": "com.amazonaws.us-east-1.xray",
-        "SubnetIds": [
-          {
-            "Ref": "VpcIsolatedSubnet1SubnetE48C5737",
-          },
-          {
-            "Ref": "VpcIsolatedSubnet2Subnet16364B91",
-          },
-        ],
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "TestNetwork/Vpc/Default",
-          },
-        ],
-        "VpcEndpointType": "Interface",
-        "VpcId": {
-          "Ref": "Vpc8378EB38",
-        },
-      },
-      "Type": "AWS::EC2::VPCEndpoint",
     },
   },
   "Rules": {

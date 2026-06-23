@@ -93,7 +93,7 @@ incur charges:
 - **VPC interface endpoints** — roughly $0.01/hour each, and this solution
   provisions several (Amazon Bedrock Runtime, Amazon Bedrock AgentCore, aoss
   control + data, Amazon ECR API + Docker, Amazon CloudWatch Logs, Amazon
-  Cognito, AWS X-Ray).
+  Cognito).
 - **AWS WAF** web ACL and **Amazon CloudFront** distribution.
 - **AWS CodeBuild** — charged per build minute during image builds (deploy time).
 - **Amazon Bedrock** model invocations — per-token charges for the chat and
