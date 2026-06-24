@@ -137,19 +137,31 @@ export class ImageBuildConstruct extends Construct {
     asset.grantRead(this.project);
 
     // --- Build trigger: start the build on deploy and wait for it ----------
+    // Explicit, auto-named log groups (with ONE_WEEK retention + DESTROY) so the
+    // functions log to a CDK-managed group instead of the deprecated
+    // `logRetention` custom resource. Auto-naming avoids any collision with a
+    // pre-existing `/aws/lambda/<fn>` group on in-place updates.
+    const triggerFnLogGroup = new logs.LogGroup(this, 'TriggerOnEventFnLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const triggerFn = new lambda.Function(this, 'TriggerOnEventFn', {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'index.on_event',
       timeout: Duration.minutes(2),
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: triggerFnLogGroup,
       code: lambda.Code.fromInline(BUILD_TRIGGER_SOURCE),
       description: 'Starts the image CodeBuild on deploy (onEvent)',
+    });
+    const isCompleteFnLogGroup = new logs.LogGroup(this, 'TriggerIsCompleteFnLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
     });
     const isCompleteFn = new lambda.Function(this, 'TriggerIsCompleteFn', {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'index.is_complete',
       timeout: Duration.minutes(2),
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: isCompleteFnLogGroup,
       code: lambda.Code.fromInline(BUILD_TRIGGER_SOURCE),
       description: 'Polls the image CodeBuild until done (isComplete)',
     });
@@ -163,12 +175,16 @@ export class ImageBuildConstruct extends Construct {
       );
     }
 
+    const buildProviderLogGroup = new logs.LogGroup(this, 'BuildProviderLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const provider = new cr.Provider(this, 'BuildProvider', {
       onEventHandler: triggerFn,
       isCompleteHandler: isCompleteFn,
       queryInterval: Duration.seconds(15),
       totalTimeout: Duration.minutes(40),
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: buildProviderLogGroup,
     });
 
     const trigger = new CustomResource(this, 'BuildTrigger', {

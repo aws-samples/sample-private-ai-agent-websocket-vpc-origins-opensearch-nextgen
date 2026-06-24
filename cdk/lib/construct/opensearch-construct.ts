@@ -256,9 +256,13 @@ export class OpenSearchConstruct extends Construct {
       }),
     );
 
+    const provisionerProviderLogGroup = new logs.LogGroup(this, 'ProvisionerProviderLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const provider = new cr.Provider(this, 'ProvisionerProvider', {
       onEventHandler: this.provisionerFunction,
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: provisionerProviderLogGroup,
     });
 
     this.customResource = new CustomResource(this, 'Resource', {

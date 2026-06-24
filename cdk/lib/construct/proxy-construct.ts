@@ -121,7 +121,12 @@ export class ProxyConstruct extends Construct {
 
     this.cluster = new ecs.Cluster(this, 'Cluster', {
       vpc,
-      containerInsights: config.containerInsights,
+      // containerInsightsV2 replaces the deprecated `containerInsights` boolean;
+      // both map to the same underlying ECS ClusterSettings, so this is a no-op
+      // for the deployed cluster (default DISABLED).
+      containerInsightsV2: config.containerInsights
+        ? ecs.ContainerInsights.ENABLED
+        : ecs.ContainerInsights.DISABLED,
     });
 
     // Task role is created in the DataStack (so it can be an aoss data-access
