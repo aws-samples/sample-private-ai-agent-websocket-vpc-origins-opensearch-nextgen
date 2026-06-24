@@ -521,6 +521,14 @@ exports[`split-stack snapshots App stack template matches the stored snapshot 1`
       "Type": "AWS::SecretsManager::Secret",
       "UpdateReplacePolicy": "Delete",
     },
+    "AuthDemoUserProviderLogs8E6B0C9D": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "AuthDemoUserProviderframeworkonEvent73929F42": {
       "DependsOn": [
         "AuthDemoUserProviderframeworkonEventServiceRoleDefaultPolicy69AF59DC",
@@ -546,6 +554,9 @@ exports[`split-stack snapshots App stack template matches the stored snapshot 1`
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "AuthDemoUserProviderLogs8E6B0C9D",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -557,29 +568,6 @@ exports[`split-stack snapshots App stack template matches the stored snapshot 1`
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "AuthDemoUserProviderframeworkonEventLogRetentionCDE0C87D": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AuthDemoUserProviderframeworkonEvent73929F42",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "AuthDemoUserProviderframeworkonEventServiceRoleAED9AD98": {
       "Properties": {
@@ -741,6 +729,11 @@ def handler(event, context):
         },
         "Description": "Creates the demo Cognito user and sets its password from Secrets Manager (single source of truth)",
         "Handler": "index.handler",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "AuthDemoUserProvisionerFnLogsC293BC67",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "AuthDemoUserProvisionerFnServiceRoleB87D066F",
@@ -752,28 +745,13 @@ def handler(event, context):
       },
       "Type": "AWS::Lambda::Function",
     },
-    "AuthDemoUserProvisionerFnLogRetention10ACDF3A": {
+    "AuthDemoUserProvisionerFnLogsC293BC67": {
+      "DeletionPolicy": "Delete",
       "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AuthDemoUserProvisionerFn7746F341",
-              },
-            ],
-          ],
-        },
         "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
       },
-      "Type": "Custom::LogRetention",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "AuthDemoUserProvisionerFnServiceRoleB87D066F": {
       "Properties": {
@@ -1037,83 +1015,6 @@ def handler(event, context):
         },
       },
       "Type": "AWS::CloudFront::VpcOrigin",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
-      "DependsOn": [
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
-        },
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "logs:PutRetentionPolicy",
-                "logs:DeleteRetentionPolicy",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "Roles": [
-          {
-            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
     },
     "ProxyCluster29DC0C5A": {
       "Properties": {
@@ -1641,6 +1542,14 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
       },
       "Type": "AWS::CodeBuild::Project",
     },
+    "AgentImageBuildProviderLogsDBDBAA00": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "AgentImageBuildProviderframeworkisCompleteA31EED3C": {
       "DependsOn": [
         "AgentImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9E0CD87C",
@@ -1672,6 +1581,9 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "AgentImageBuildProviderLogsDBDBAA00",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -1683,29 +1595,6 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "AgentImageBuildProviderframeworkisCompleteLogRetention7EE2754F": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AgentImageBuildProviderframeworkisCompleteA31EED3C",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "AgentImageBuildProviderframeworkisCompleteServiceRole042CCB7C": {
       "Properties": {
@@ -1860,6 +1749,9 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "AgentImageBuildProviderLogsDBDBAA00",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -1871,29 +1763,6 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "AgentImageBuildProviderframeworkonEventLogRetention78E24921": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AgentImageBuildProviderframeworkonEventC74F858F",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "AgentImageBuildProviderframeworkonEventServiceRole1A6E0575": {
       "Properties": {
@@ -2052,6 +1921,9 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "AgentImageBuildProviderLogsDBDBAA00",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -2063,29 +1935,6 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "AgentImageBuildProviderframeworkonTimeoutLogRetentionB7E03188": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AgentImageBuildProviderframeworkonTimeout1722823A",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "AgentImageBuildProviderframeworkonTimeoutServiceRole3D8E2A5D": {
       "Properties": {
@@ -2608,6 +2457,11 @@ def is_complete(event, context):
         },
         "Description": "Polls the image CodeBuild until done (isComplete)",
         "Handler": "index.is_complete",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "AgentImageTriggerIsCompleteFnLogs56244A0A",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97",
@@ -2619,28 +2473,13 @@ def is_complete(event, context):
       },
       "Type": "AWS::Lambda::Function",
     },
-    "AgentImageTriggerIsCompleteFnLogRetention0AD00035": {
+    "AgentImageTriggerIsCompleteFnLogs56244A0A": {
+      "DeletionPolicy": "Delete",
       "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AgentImageTriggerIsCompleteFn1CAE8088",
-              },
-            ],
-          ],
-        },
         "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
       },
-      "Type": "Custom::LogRetention",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "AgentImageTriggerIsCompleteFnServiceRoleA8C8FF97": {
       "Properties": {
@@ -2758,6 +2597,11 @@ def is_complete(event, context):
         },
         "Description": "Starts the image CodeBuild on deploy (onEvent)",
         "Handler": "index.on_event",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "AgentImageTriggerOnEventFnLogsEEBE33CB",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "AgentImageTriggerOnEventFnServiceRoleB57C491E",
@@ -2769,28 +2613,13 @@ def is_complete(event, context):
       },
       "Type": "AWS::Lambda::Function",
     },
-    "AgentImageTriggerOnEventFnLogRetention4537C011": {
+    "AgentImageTriggerOnEventFnLogsEEBE33CB": {
+      "DeletionPolicy": "Delete",
       "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AgentImageTriggerOnEventFn5732D651",
-              },
-            ],
-          ],
-        },
         "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
       },
-      "Type": "Custom::LogRetention",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "AgentImageTriggerOnEventFnServiceRoleB57C491E": {
       "Properties": {
@@ -2848,83 +2677,6 @@ def is_complete(event, context):
         "Roles": [
           {
             "Ref": "AgentImageTriggerOnEventFnServiceRoleB57C491E",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
-      "DependsOn": [
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
-        },
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "logs:PutRetentionPolicy",
-                "logs:DeleteRetentionPolicy",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "Roles": [
-          {
-            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
           },
         ],
       },
@@ -3053,6 +2805,14 @@ def is_complete(event, context):
       },
       "Type": "AWS::CodeBuild::Project",
     },
+    "ProxyImageBuildProviderLogs110BF305": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "ProxyImageBuildProviderframeworkisComplete53D3FA27": {
       "DependsOn": [
         "ProxyImageBuildProviderframeworkisCompleteServiceRoleDefaultPolicy9DB7DFC9",
@@ -3084,6 +2844,9 @@ def is_complete(event, context):
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "ProxyImageBuildProviderLogs110BF305",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -3095,29 +2858,6 @@ def is_complete(event, context):
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "ProxyImageBuildProviderframeworkisCompleteLogRetentionF72C3F8A": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "ProxyImageBuildProviderframeworkisComplete53D3FA27",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "ProxyImageBuildProviderframeworkisCompleteServiceRole57A24358": {
       "Properties": {
@@ -3272,6 +3012,9 @@ def is_complete(event, context):
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "ProxyImageBuildProviderLogs110BF305",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -3283,29 +3026,6 @@ def is_complete(event, context):
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "ProxyImageBuildProviderframeworkonEventLogRetention1D0F3101": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "ProxyImageBuildProviderframeworkonEvent6073213A",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "ProxyImageBuildProviderframeworkonEventServiceRole9B944BFD": {
       "Properties": {
@@ -3464,6 +3184,9 @@ def is_complete(event, context):
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "ProxyImageBuildProviderLogs110BF305",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -3475,29 +3198,6 @@ def is_complete(event, context):
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "ProxyImageBuildProviderframeworkonTimeoutLogRetentionBB902453": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "ProxyImageBuildProviderframeworkonTimeout552F5355",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "ProxyImageBuildProviderframeworkonTimeoutServiceRole488ED1DE": {
       "Properties": {
@@ -4020,6 +3720,11 @@ def is_complete(event, context):
         },
         "Description": "Polls the image CodeBuild until done (isComplete)",
         "Handler": "index.is_complete",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "ProxyImageTriggerIsCompleteFnLogs13600C1A",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "ProxyImageTriggerIsCompleteFnServiceRoleF9CA0283",
@@ -4031,28 +3736,13 @@ def is_complete(event, context):
       },
       "Type": "AWS::Lambda::Function",
     },
-    "ProxyImageTriggerIsCompleteFnLogRetention854303FC": {
+    "ProxyImageTriggerIsCompleteFnLogs13600C1A": {
+      "DeletionPolicy": "Delete",
       "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "ProxyImageTriggerIsCompleteFn3E4FD989",
-              },
-            ],
-          ],
-        },
         "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
       },
-      "Type": "Custom::LogRetention",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "ProxyImageTriggerIsCompleteFnServiceRoleDefaultPolicyD62A0494": {
       "Properties": {
@@ -4170,6 +3860,11 @@ def is_complete(event, context):
         },
         "Description": "Starts the image CodeBuild on deploy (onEvent)",
         "Handler": "index.on_event",
+        "LoggingConfig": {
+          "LogGroup": {
+            "Ref": "ProxyImageTriggerOnEventFnLogs58827DF4",
+          },
+        },
         "Role": {
           "Fn::GetAtt": [
             "ProxyImageTriggerOnEventFnServiceRole28490240",
@@ -4181,28 +3876,13 @@ def is_complete(event, context):
       },
       "Type": "AWS::Lambda::Function",
     },
-    "ProxyImageTriggerOnEventFnLogRetention14D05053": {
+    "ProxyImageTriggerOnEventFnLogs58827DF4": {
+      "DeletionPolicy": "Delete",
       "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "ProxyImageTriggerOnEventFnE19B0B40",
-              },
-            ],
-          ],
-        },
         "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
       },
-      "Type": "Custom::LogRetention",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
     },
     "ProxyImageTriggerOnEventFnServiceRole28490240": {
       "Properties": {
@@ -4605,83 +4285,6 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
       },
       "Type": "AWS::IAM::Role",
     },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
-      "DependsOn": [
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-      ],
-      "Properties": {
-        "Code": {
-          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
-        },
-        "Handler": "index.handler",
-        "Role": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-            "Arn",
-          ],
-        },
-        "Runtime": "nodejs24.x",
-        "Timeout": 900,
-      },
-      "Type": "AWS::Lambda::Function",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
-      "Properties": {
-        "AssumeRolePolicyDocument": {
-          "Statement": [
-            {
-              "Action": "sts:AssumeRole",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com",
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "ManagedPolicyArns": [
-          {
-            "Fn::Join": [
-              "",
-              [
-                "arn:",
-                {
-                  "Ref": "AWS::Partition",
-                },
-                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
-              ],
-            ],
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Role",
-    },
-    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "logs:PutRetentionPolicy",
-                "logs:DeleteRetentionPolicy",
-              ],
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
-        "Roles": [
-          {
-            "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
     "OpenSearch587998CD": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -4921,6 +4524,14 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
       },
       "Type": "AWS::IAM::Policy",
     },
+    "OpenSearchProvisionerProviderLogsCD8BAA4E": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 7,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
     "OpenSearchProvisionerProviderframeworkonEvent735AB7AE": {
       "DependsOn": [
         "OpenSearchProvisionerProviderframeworkonEventServiceRoleDefaultPolicy5F6A0C11",
@@ -4946,6 +4557,9 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
         "LoggingConfig": {
           "ApplicationLogLevel": "FATAL",
           "LogFormat": "JSON",
+          "LogGroup": {
+            "Ref": "OpenSearchProvisionerProviderLogsCD8BAA4E",
+          },
         },
         "Role": {
           "Fn::GetAtt": [
@@ -4957,29 +4571,6 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "OpenSearchProvisionerProviderframeworkonEventLogRetentionC25B77C8": {
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "OpenSearchProvisionerProviderframeworkonEvent735AB7AE",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 7,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::LogRetention",
     },
     "OpenSearchProvisionerProviderframeworkonEventServiceRole14DD7608": {
       "Properties": {

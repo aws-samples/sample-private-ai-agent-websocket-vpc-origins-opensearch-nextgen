@@ -117,11 +117,15 @@ export class AuthConstruct extends Construct {
     // adminSetUserPassword atomically. The password set on Cognito and the value
     // stored in Secrets Manager are therefore the SAME string — no dynamic
     // reference, no drift.
+    const provisionUserFnLogGroup = new logs.LogGroup(this, 'DemoUserProvisionerFnLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const provisionUserFn = new lambda.Function(this, 'DemoUserProvisionerFn', {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'index.handler',
       timeout: Duration.minutes(2),
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: provisionUserFnLogGroup,
       code: lambda.Code.fromInline(DEMO_USER_PROVISIONER_SOURCE),
       description: 'Creates the demo Cognito user and sets its password from Secrets Manager (single source of truth)',
     });
@@ -136,9 +140,13 @@ export class AuthConstruct extends Construct {
       }),
     );
 
+    const demoUserProviderLogGroup = new logs.LogGroup(this, 'DemoUserProviderLogs', {
+      retention: logs.RetentionDays.ONE_WEEK,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
     const provider = new cr.Provider(this, 'DemoUserProvider', {
       onEventHandler: provisionUserFn,
-      logRetention: logs.RetentionDays.ONE_WEEK,
+      logGroup: demoUserProviderLogGroup,
     });
 
     new CustomResource(this, 'DemoUser', {
