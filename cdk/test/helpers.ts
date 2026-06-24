@@ -48,6 +48,7 @@ export function makeTestConfig(overrides: Partial<AgentConfig> = {}): AgentConfi
     originDomainName: null,
     originCertificateArn: null,
     containerInsights: false,
+    cloudFrontAccessLogs: false,
     availabilityZones: ['us-east-1a', 'us-east-1d'],
     instanceName: 'agent',
     collectionName: 'agent-rag-agent',

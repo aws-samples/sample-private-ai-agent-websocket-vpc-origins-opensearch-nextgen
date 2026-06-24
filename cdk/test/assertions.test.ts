@@ -152,6 +152,32 @@ describe('AppStack — CloudFront distribution', () => {
       }),
     });
   });
+
+  test('access logging is OFF by default (no Logging block, no log bucket)', () => {
+    appTemplate.hasResourceProperties('AWS::CloudFront::Distribution', {
+      DistributionConfig: Match.objectLike({ Logging: Match.absent() }),
+    });
+    appTemplate.resourceCountIs('AWS::S3::Bucket', 0);
+  });
+});
+
+describe('AppStack — CloudFront access logging (opt-in)', () => {
+  test('enabling cloudFrontAccessLogs provisions an ACL-enabled log bucket wired to the distribution', () => {
+    const { appTemplate: t } = synthStacks({ cloudFrontAccessLogs: true });
+    // One log bucket, with ACLs enabled (BucketOwnerPreferred) for CloudFront log delivery.
+    t.resourceCountIs('AWS::S3::Bucket', 1);
+    t.hasResourceProperties('AWS::S3::Bucket', {
+      OwnershipControls: Match.objectLike({
+        Rules: Match.arrayWith([Match.objectLike({ ObjectOwnership: 'BucketOwnerPreferred' })]),
+      }),
+    });
+    // The distribution's Logging block references that bucket.
+    t.hasResourceProperties('AWS::CloudFront::Distribution', {
+      DistributionConfig: Match.objectLike({
+        Logging: Match.objectLike({ Bucket: Match.anyValue(), Prefix: 'cf-access-logs/' }),
+      }),
+    });
+  });
 });
 
 describe('AppStack — HTTPS origin mode (opt-in)', () => {

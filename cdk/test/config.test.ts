@@ -326,6 +326,7 @@ describe('resolveConfig', () => {
         originDomainName: null,
         originCertificateArn: null,
         containerInsights: false,
+        cloudFrontAccessLogs: false,
         availabilityZones: [],
         instanceName: 'demo',
         collectionName: 'agent-rag-demo',

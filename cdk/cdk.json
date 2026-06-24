@@ -27,6 +27,7 @@
       "domainName": null,
       "certificateArn": null,
       "containerInsights": false,
+      "cloudFrontAccessLogs": false,
       "instanceName": "demo"
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,

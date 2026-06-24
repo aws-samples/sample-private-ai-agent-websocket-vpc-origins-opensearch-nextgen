@@ -72,6 +72,13 @@ export interface AgentConfig {
   /** Whether to enable ECS Container Insights. */
   containerInsights: boolean;
   /**
+   * Whether to enable CloudFront standard access logging to a dedicated S3
+   * bucket. Off by default to keep the sample lean (the proxy already logs
+   * request-level detail). When true, an ACL-enabled log bucket is provisioned
+   * (CloudFront's log-delivery group writes via ACL) and removed on teardown.
+   */
+  cloudFrontAccessLogs: boolean;
+  /**
    * Explicit Availability Zone *names* the VPC spans. Required because Bedrock
    * AgentCore Runtime only supports a subset of AZs per region (by AZ ID): in
    * us-east-1 those are `use1-az1`, `use1-az2`, `use1-az4`. The VPC (and thus
@@ -134,6 +141,7 @@ export const AGENT_CONFIG_DEFAULTS = {
   deregistrationDelaySeconds: 300,
   priceClass: 'PriceClass_100',
   containerInsights: false,
+  cloudFrontAccessLogs: false,
   albOriginProtocol: 'HTTP' as const,
   instanceName: 'demo',
   // No hardcoded Availability Zones. The deploy script selects AZs at deploy
@@ -288,6 +296,7 @@ export function resolveConfig(scope: Construct): AgentConfig {
     'originDomainName',
     'originCertificateArn',
     'containerInsights',
+    'cloudFrontAccessLogs',
     'availabilityZones',
     'instanceName',
     'agentRuntimeName',
@@ -368,6 +377,10 @@ export function resolveConfig(scope: Construct): AgentConfig {
   }
 
   const containerInsights = toBoolean(raw.containerInsights, AGENT_CONFIG_DEFAULTS.containerInsights);
+  const cloudFrontAccessLogs = toBoolean(
+    raw.cloudFrontAccessLogs,
+    AGENT_CONFIG_DEFAULTS.cloudFrontAccessLogs,
+  );
 
   // Availability Zones the VPC spans. Accepts a string array or a comma-
   // separated string. Provided at DEPLOY TIME by the deploy script (which
@@ -494,6 +507,7 @@ export function resolveConfig(scope: Construct): AgentConfig {
     originDomainName,
     originCertificateArn,
     containerInsights,
+    cloudFrontAccessLogs,
     availabilityZones,
     instanceName,
     collectionName,
