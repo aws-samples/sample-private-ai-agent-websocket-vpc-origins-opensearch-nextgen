@@ -79,6 +79,29 @@ deliberate, documented trade-offs:
 - **ECS task execution role uses the AWS-managed `AmazonECSTaskExecutionRolePolicy`**
   and **CodeBuild runs privileged** for image builds — both are standard AWS
   patterns, acceptable in a single-purpose account.
+- **The `Server` response header leaks the backend framework type.** The default
+  CloudFront `ResponseHeadersPolicy.SECURITY_HEADERS` policy does not strip the
+  `Server` header, so every response advertises `uvicorn` as the origin server.
+  For production, override the response headers policy to remove it:
+  `removeHeaders: ['Server']`.
+- **WAF `SizeRestrictions_BODY` override is COUNT for all paths.** The
+  `SizeRestrictions_BODY` rule is set to COUNT (not BLOCK) to allow PDF uploads
+  through the 8 KB default limit. For production, scope the COUNT override to
+  `/uploads/*` only and add a separate body-size BLOCK rule on
+  `/api/invocations` to prevent oversized prompt injection payloads from
+  reaching the agent.
+- **PDF content is passed to the agent without sanitization.** Text extracted
+  from uploaded contracts is forwarded directly to the AgentCore runtime as
+  context. A malicious document could embed instruction-injection patterns (for
+  example, hidden white-on-white text or metadata fields containing
+  role-override instructions). For deployments handling untrusted documents,
+  add a content filtering step between PDF extraction and agent invocation, or
+  enable [Amazon Bedrock Guardrails](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html)
+  on the runtime to detect and block injection attempts at the model layer.
+- **CloudFront VPC Origin `keepaliveTimeout` is 5s.** This is fine for the demo,
+  but AWS recommends matching it to the ALB idle timeout (60s) so persistent
+  origin connections are reused rather than re-established. For production, raise
+  the VPC Origin `keepaliveTimeout` to 60s.
 
 ## Cost Considerations
 
