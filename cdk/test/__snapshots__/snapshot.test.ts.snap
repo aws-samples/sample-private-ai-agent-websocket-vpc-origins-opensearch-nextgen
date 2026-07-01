@@ -441,7 +441,18 @@ exports[`split-stack snapshots App stack template matches the stored snapshot 1`
         "CloudFrontDistributionEAB06B35",
       ],
       "Properties": {
-        "Create": "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]},{"Name":"vpc-id","Values":["",
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpc8378EB38272D6E3A",
+              },
+              ""]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+            ],
+          ],
+        },
         "InstallLatestAwsSdk": true,
         "ServiceToken": {
           "Fn::GetAtt": [
@@ -449,7 +460,18 @@ exports[`split-stack snapshots App stack template matches the stored snapshot 1`
             "Arn",
           ],
         },
-        "Update": "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"EC2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]},{"Name":"vpc-id","Values":["",
+              {
+                "Fn::ImportValue": "TestNetwork:ExportsOutputRefVpc8378EB38272D6E3A",
+              },
+              ""]}]},"physicalResourceId":{"responsePath":"SecurityGroups.0.GroupId"},"outputPaths":["SecurityGroups.0.GroupId"]}",
+            ],
+          ],
+        },
       },
       "Type": "Custom::AWS",
       "UpdateReplacePolicy": "Delete",
@@ -1405,7 +1427,7 @@ exports[`split-stack snapshots Build stack template matches the stored snapshot 
             {
               "Ref": "ProxyImageRepoBB30DFC4",
             },
-            ":95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
+            ":d22390cf334f36308cd6e8627754d8262f4c81fd05574fcf7143d0799fefb538",
           ],
         ],
       },
@@ -2749,7 +2771,7 @@ def is_complete(event, context):
             {
               "Name": "IMAGE_TAG",
               "Type": "PLAINTEXT",
-              "Value": "95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
+              "Value": "d22390cf334f36308cd6e8627754d8262f4c81fd05574fcf7143d0799fefb538",
             },
             {
               "Name": "TARGET_PLATFORM",
@@ -2798,7 +2820,7 @@ def is_complete(event, context):
     }
   }
 }",
-          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6.zip",
+          "Location": "cdk-hnb659fds-assets-123456789012-us-east-1/d22390cf334f36308cd6e8627754d8262f4c81fd05574fcf7143d0799fefb538.zip",
           "Type": "S3",
         },
         "TimeoutInMinutes": 30,
@@ -3489,7 +3511,7 @@ def is_complete(event, context):
                       {
                         "Ref": "AWS::Partition",
                       },
-                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6.zip",
+                      ":s3:::cdk-hnb659fds-assets-123456789012-us-east-1/d22390cf334f36308cd6e8627754d8262f4c81fd05574fcf7143d0799fefb538.zip",
                     ],
                   ],
                 },
@@ -3639,7 +3661,7 @@ def is_complete(event, context):
         "ProxyImageBuildRole70F6F0F8",
       ],
       "Properties": {
-        "ImageTag": "95db2e5a7c053dd01c859edf6082a6f56569688d3baacd27a80faa81d626fbe6",
+        "ImageTag": "d22390cf334f36308cd6e8627754d8262f4c81fd05574fcf7143d0799fefb538",
         "ProjectName": {
           "Ref": "ProxyImageBuild77DEACC0",
         },

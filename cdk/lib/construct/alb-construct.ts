@@ -117,10 +117,18 @@ export class AlbConstruct extends Construct {
   /** The port the CloudFront VPC Origin connects to (80 for HTTP, 443 for HTTPS). */
   public readonly originPort: number;
 
+  /**
+   * The VPC the ALB lives in. Retained so the VPC Origin service-SG lookup can
+   * scope its `describeSecurityGroups` call to this VPC (see
+   * {@link AlbConstruct.restrictIngressToVpcOriginServiceSg}).
+   */
+  private readonly vpc: ec2.IVpc;
+
   constructor(scope: Construct, id: string, props: AlbConstructProps) {
     super(scope, id);
 
     this.albSg = props.albSg;
+    this.vpc = props.vpc;
     const originProtocol = props.originProtocol ?? 'HTTP';
     this.originPort = originProtocol === 'HTTPS' ? ALB_HTTPS_PORT : ALB_HTTP_PORT;
 
@@ -207,7 +215,9 @@ export class AlbConstruct extends Construct {
    * account/region, but its id is not exposed directly through CloudFormation.
    * This method therefore resolves the id post-deploy with an
    * {@link cr.AwsCustomResource} that calls `ec2:DescribeSecurityGroups`
-   * filtered on `group-name = CloudFront-VPCOrigins-Service-SG`, reads
+   * filtered on `group-name = CloudFront-VPCOrigins-Service-SG` **and
+   * `vpc-id` = this ALB's VPC** (accounts that have provisioned VPC Origins
+   * before have several identically-named groups, one per VPC), reads
    * `SecurityGroups.0.GroupId` from the response, and adds an ingress rule to
    * the ALB security group allowing TCP 80 from the resolved group id.
    *
@@ -242,7 +252,15 @@ export class AlbConstruct extends Construct {
         service: 'EC2',
         action: 'describeSecurityGroups',
         parameters: {
-          Filters: [{ Name: 'group-name', Values: [VPC_ORIGIN_SERVICE_SG_NAME] }],
+          Filters: [
+            { Name: 'group-name', Values: [VPC_ORIGIN_SERVICE_SG_NAME] },
+            // Scope to THIS VPC. Accounts that have used VPC Origins before have
+            // multiple SGs with this same name across different VPCs; without the
+            // vpc-id filter the lookup can resolve a group in the wrong VPC and
+            // the ingress rule fails with "resources that belong to different
+            // networks".
+            { Name: 'vpc-id', Values: [this.vpc.vpcId] },
+          ],
         },
         physicalResourceId: cr.PhysicalResourceId.fromResponse('SecurityGroups.0.GroupId'),
         outputPaths: ['SecurityGroups.0.GroupId'],
@@ -251,7 +269,10 @@ export class AlbConstruct extends Construct {
         service: 'EC2',
         action: 'describeSecurityGroups',
         parameters: {
-          Filters: [{ Name: 'group-name', Values: [VPC_ORIGIN_SERVICE_SG_NAME] }],
+          Filters: [
+            { Name: 'group-name', Values: [VPC_ORIGIN_SERVICE_SG_NAME] },
+            { Name: 'vpc-id', Values: [this.vpc.vpcId] },
+          ],
         },
         physicalResourceId: cr.PhysicalResourceId.fromResponse('SecurityGroups.0.GroupId'),
         outputPaths: ['SecurityGroups.0.GroupId'],

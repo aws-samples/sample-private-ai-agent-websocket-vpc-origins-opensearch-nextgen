@@ -19,6 +19,7 @@ For an architecture overview and configuration reference, see
 | **Node.js 20.x or later and npm** | Required for the AWS CDK app. |
 | **AWS CDK CLI** | Install with `npm install -g aws-cdk`. |
 | **Amazon Bedrock model access** | Enable access in your Region for the chat model (Claude Sonnet) and the embeddings model (Amazon Titan Text v2). |
+| **VPCs-per-Region quota** | This solution creates a dedicated VPC. If you are near the default limit of **5 VPCs per Region** in your target Region, request an increase first via **Service Quotas → Amazon VPC → VPCs per Region** (quota code `L-F678F1CE`). |
 
 > 💡 **Tip:** Everything below works unchanged in **AWS CloudShell**, which comes
 > with the AWS CLI and Node.js preinstalled.
@@ -153,6 +154,11 @@ cd src/container/agent && python -m pytest tests -q
 cd ../proxy            && python -m pytest tests -q
 ```
 
+> 💡 If `npx jest` reports a single failing **snapshot** test after you change
+> CDK source (or the proxy image source hash changes), it is expected drift, not
+> a regression. Review the diff, then refresh the stored snapshot with
+> `npx jest --updateSnapshot` and re-run `npx jest` to confirm it is green.
+
 ---
 
 ## 7. Tear down
@@ -201,5 +207,6 @@ aws ec2 describe-network-interfaces --region <region> \
 |---|---|
 | Deploy fails at bootstrap check | Run `npx cdk bootstrap aws://<account-id>/<region>`. |
 | Bedrock access/permission errors | Enable model access in the Bedrock console (Step 1) and confirm the Region. |
+| `AccessDeniedException: iam:CreateServiceLinkedRole` for `observability.aoss.amazonaws.com` during the Data stack | First-time OpenSearch Serverless use in a fresh account: the AOSS observability service-linked role does not exist yet. Create it once, then redeploy: `aws iam create-service-linked-role --aws-service-name observability.aoss.amazonaws.com` (a `has already been taken`/`InvalidInput` error just means it already exists — safe to ignore). |
 | `--include-network` fails on "subnet has dependencies" | AgentCore ENIs are still attached; wait until the ENI count (above) is 0, then retry. |
 | First deploy seems slow | The initial build (CodeBuild images + CloudFront + AgentCore) takes ~15–25 min. |
