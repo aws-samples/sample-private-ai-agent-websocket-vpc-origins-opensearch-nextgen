@@ -19,12 +19,13 @@
  * _Requirements: 1.4, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 4.1, 4.2, 13.1,
  * 13.6, 14.1, 14.2, 14.3_
  */
-import { CfnOutput, Duration } from 'aws-cdk-lib';
+import { CfnOutput, Duration, RemovalPolicy } from 'aws-cdk-lib';
 // AWS Certificate Manager (ACM) — provides the TLS certificate for the
 // CloudFront -> ALB HTTPS origin when that mode is selected.
 import { aws_certificatemanager as acm } from 'aws-cdk-lib';
 import { aws_cloudfront as cloudfront } from 'aws-cdk-lib';
 import { aws_cloudfront_origins as origins } from 'aws-cdk-lib';
+import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import { Construct } from 'constructs';
 import { AgentConfig } from '../config';
@@ -150,9 +151,31 @@ export class CloudFrontConstruct extends Construct {
       ? acm.Certificate.fromCertificateArn(this, 'ViewerCertificate', config.certificateArn as string)
       : undefined;
 
+    // --- Access logging (opt-in) -------------------------------------------
+    // CloudFront standard access logs to a dedicated S3 bucket. Off by default
+    // (the proxy already logs request-level detail). The bucket MUST keep ACLs
+    // enabled (BUCKET_OWNER_PREFERRED) because CloudFront's log-delivery group
+    // writes objects via ACL; a BUCKET_OWNER_ENFORCED bucket would reject them.
+    // Removed on teardown so the sample stays clean.
+    const accessLogBucket = config.cloudFrontAccessLogs
+      ? new s3.Bucket(this, 'AccessLogsBucket', {
+          objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
+          encryption: s3.BucketEncryption.S3_MANAGED,
+          blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+          enforceSSL: true,
+          removalPolicy: RemovalPolicy.DESTROY,
+          autoDeleteObjects: true,
+          lifecycleRules: [{ expiration: Duration.days(90) }],
+        })
+      : undefined;
+
     // --- Distribution -------------------------------------------------------
     this.distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'Private Real-Time AI Agent - sole public entry point',
+      // Standard access logging (opt-in via config.cloudFrontAccessLogs).
+      enableLogging: config.cloudFrontAccessLogs,
+      logBucket: accessLogBucket,
+      logFilePrefix: accessLogBucket ? 'cf-access-logs/' : undefined,
       // Default behavior: serves the demo SPA through the VPC Origin. Viewers
       // are redirected to HTTPS. (R3.8)
       defaultBehavior: {
@@ -204,6 +227,12 @@ export class CloudFrontConstruct extends Construct {
       description: 'WebSocket streaming endpoint served through CloudFront',
       value: `wss://${domain}/ws/`,
     });
+    if (accessLogBucket) {
+      new CfnOutput(this, 'AccessLogsBucketName', {
+        description: 'S3 bucket receiving CloudFront standard access logs',
+        value: accessLogBucket.bucketName,
+      });
+    }
     new CfnOutput(this, 'ApiEndpoint', {
       description: 'HTTP invocation endpoint served through CloudFront',
       value: `https://${domain}/api/invocations`,
