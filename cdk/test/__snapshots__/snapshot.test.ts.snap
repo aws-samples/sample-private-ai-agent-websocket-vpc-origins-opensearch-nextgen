@@ -4489,6 +4489,17 @@ exports[`split-stack snapshots Data stack template matches the stored snapshot 1
               "Sid": "AossControlPlaneBootstrap",
             },
             {
+              "Action": "iam:CreateServiceLinkedRole",
+              "Condition": {
+                "StringEquals": {
+                  "iam:AWSServiceName": "observability.aoss.amazonaws.com",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": "arn:aws:iam::*:role/aws-service-role/observability.aoss.amazonaws.com/AWSServiceRoleForAmazonOpenSearchServerless",
+              "Sid": "AllowAossServiceLinkedRoleCreation",
+            },
+            {
               "Action": "bedrock:InvokeModel",
               "Effect": "Allow",
               "Resource": "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0",

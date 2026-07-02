@@ -247,6 +247,28 @@ export class OpenSearchConstruct extends Construct {
         resources: ['*'],
       }),
     );
+    // The FIRST OpenSearch Serverless collection created in an account requires
+    // the aoss service-linked role (AWSServiceRoleForAmazonOpenSearchServerless
+    // for observability.aoss.amazonaws.com). aoss creates it during
+    // CreateCollection, which needs iam:CreateServiceLinkedRole. Without this,
+    // a brand-new account fails the first deploy with an IAM AccessDenied on
+    // CreateCollection. Scoped to ONLY that service-linked role (exact ARN path
+    // + iam:AWSServiceName condition), so the bootstrap role cannot create any
+    // other role. On accounts that already have the SLR this is a harmless
+    // no-op (aoss does not recreate it), keeping the deploy portable.
+    this.provisionerFunction.addToRolePolicy(
+      new iam.PolicyStatement({
+        sid: 'AllowAossServiceLinkedRoleCreation',
+        effect: iam.Effect.ALLOW,
+        actions: ['iam:CreateServiceLinkedRole'],
+        resources: [
+          'arn:aws:iam::*:role/aws-service-role/observability.aoss.amazonaws.com/AWSServiceRoleForAmazonOpenSearchServerless',
+        ],
+        conditions: {
+          StringEquals: { 'iam:AWSServiceName': 'observability.aoss.amazonaws.com' },
+        },
+      }),
+    );
     this.provisionerFunction.addToRolePolicy(
       new iam.PolicyStatement({
         sid: 'BedrockInvokeEmbeddingsModel',
