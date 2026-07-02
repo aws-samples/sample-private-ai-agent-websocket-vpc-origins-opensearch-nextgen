@@ -30,6 +30,35 @@ preflight_path() {
   fi
 }
 
+# --- CDK app dependencies ----------------------------------------------------
+# The CDK CLI runs the app via `ts-node bin/app.ts` (see cdk.json) for synth,
+# bootstrap, and deploy, so the app's node_modules (aws-cdk-lib, ts-node,
+# @types/node, ...) MUST be installed first. On a fresh clone this directory is
+# empty, which otherwise surfaces as a wall of TS2307/TS2591 "cannot find
+# module" errors during bootstrap/deploy. This installs them automatically when
+# missing. Args: <cdk_app_dir>
+preflight_deps() {
+  local app_dir="$1"
+  if [[ -d "${app_dir}/node_modules/aws-cdk-lib" ]]; then
+    log_success "CDK app dependencies present."
+    return 0
+  fi
+  log_warn "CDK app dependencies not found in ${app_dir}."
+  log_info "Installing them now (one-time; uses npm ci when a lockfile exists)..."
+  local rc=0
+  if [[ -f "${app_dir}/package-lock.json" ]]; then
+    ( cd "${app_dir}" && npm ci ) || rc=$?
+  else
+    ( cd "${app_dir}" && npm install ) || rc=$?
+  fi
+  if [[ "${rc}" -ne 0 ]] || [[ ! -d "${app_dir}/node_modules/aws-cdk-lib" ]]; then
+    log_error "Failed to install CDK app dependencies in ${app_dir}."
+    log_error "Install them manually and retry: (cd ${app_dir} && npm ci)"
+    exit 1
+  fi
+  log_success "CDK app dependencies installed."
+}
+
 # --- AWS credentials ---------------------------------------------------------
 # Resolves ACCOUNT from STS when unset; fails fast (with the refresh hint) if
 # credentials are missing/expired.
