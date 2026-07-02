@@ -33,6 +33,8 @@
 #   ORIGIN_DOMAIN_NAME      origin hostname       (required for HTTPS)
 #   ORIGIN_CERTIFICATE_ARN  ACM cert ARN (region) (required for HTTPS)
 #   NON_INTERACTIVE         1 to skip all prompts (same as --yes)
+#   SKIP_BOOTSTRAP          1 to skip auto CDK bootstrap (default: auto-bootstrap
+#                           the environment when CDKToolkit is missing)
 set -euo pipefail
 
 # --- locate the cdk app dir (script lives in <cdk>/scripts) ------------------

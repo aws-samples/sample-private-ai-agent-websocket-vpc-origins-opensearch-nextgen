@@ -54,16 +54,35 @@ preflight_credentials() {
 }
 
 # --- CDK bootstrap -----------------------------------------------------------
-# Checks the CDKToolkit stack exists in the target region; warns (does not fail)
-# if it cannot be confirmed, since `cdk deploy` will surface a clear error.
+# Ensures the target environment is CDK-bootstrapped. If the CDKToolkit stack is
+# missing, this runs `cdk bootstrap` automatically (it is idempotent and the
+# required prerequisite for `cdk deploy`) instead of only warning. Set
+# SKIP_BOOTSTRAP=1 to opt out (e.g. when a restricted role bootstraps
+# separately). A failed bootstrap is fatal, since the deploy cannot succeed
+# without it.
 preflight_bootstrap() {
   local account="$1" region="$2"
   if aws cloudformation describe-stacks \
         --stack-name CDKToolkit --region "${region}" >/dev/null 2>&1; then
     log_success "CDK bootstrap present in ${region}."
+    return 0
+  fi
+
+  log_warn "CDK bootstrap (CDKToolkit) not found in ${region}."
+  if [[ "${SKIP_BOOTSTRAP:-0}" == "1" ]]; then
+    log_warn "SKIP_BOOTSTRAP=1 set — skipping. Deploy will fail if the environment is not bootstrapped elsewhere."
+    return 0
+  fi
+
+  log_info "Bootstrapping aws://${account}/${region} (one-time setup; idempotent)..."
+  if AWS_REGION="${region}" CDK_DEFAULT_REGION="${region}" CDK_DEFAULT_ACCOUNT="${account}" \
+       npx cdk bootstrap "aws://${account}/${region}"; then
+    log_success "CDK bootstrap complete in ${region}."
   else
-    log_warn "CDK bootstrap (CDKToolkit) not found in ${region}."
-    log_warn "If deploy fails, run: npx cdk bootstrap aws://${account}/${region}"
+    log_error "CDK bootstrap failed for aws://${account}/${region}."
+    log_error "Fix the underlying issue (often insufficient IAM permissions) and retry,"
+    log_error "or run it manually: npx cdk bootstrap aws://${account}/${region}"
+    exit 1
   fi
 }
 
