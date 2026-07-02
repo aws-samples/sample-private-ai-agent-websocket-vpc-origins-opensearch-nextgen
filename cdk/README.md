@@ -12,7 +12,8 @@ npm install
 npx cdk bootstrap aws://<account-id>/<region>   # one-time, shared
 ./scripts/deploy.sh        # deploy (Waf → Network → Build → Data → Agent → App)
 ./scripts/destroy.sh       # ordered teardown of per-deploy stacks + verify-empty
-                           #   (retains the free VPC; --include-network removes it too)
+                           #   (retains the VPC; its ~8 interface endpoints still
+                           #   bill — use --include-network to remove them too)
 ```
 
 Offline checks:

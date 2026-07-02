@@ -19,9 +19,16 @@
 #   Rather than block teardown waiting on AWS's reclaim (the old, unreliable
 #   approach), we simply RETAIN the long-lived NetworkStack. The Runtime itself
 #   deletes cleanly; the lingering ENIs sit harmlessly inside the still-present
-#   (and FREE — there is no NAT gateway) VPC and AWS reaps them on its own. The
-#   next deploy reuses the same network. This makes the everyday teardown fast
-#   and deterministic, with nothing fighting itself.
+#   VPC and AWS reaps them on its own. The next deploy reuses the same network.
+#   This makes the everyday teardown fast and deterministic, with nothing
+#   fighting itself.
+#
+#   COST NOTE: the VPC itself is free (there is no NAT gateway), but the
+#   retained NetworkStack also keeps ~8 VPC INTERFACE endpoints (ECR api/dkr,
+#   CloudWatch Logs, Bedrock Runtime, Cognito IDP, bedrock-agentcore, aoss
+#   control + data), which bill ~$0.01/hr each PER AZ (~a few $/day across 2
+#   AZs). The S3 gateway endpoint is free. Retaining Network is NOT zero-cost —
+#   use --include-network to remove everything once AWS has released the ENIs.
 #
 # Full teardown (also remove Network) — use `--include-network`. If the ENIs are
 # still present, the NetworkStack delete will fail until AWS releases them
@@ -89,7 +96,8 @@ if [[ "${INCLUDE_NETWORK}" == "1" ]]; then
   log_warn "them (re-run later). This is expected."
 else
   log_info "Default teardown: removing all stacks EXCEPT ${BASE}Network (the"
-  log_info "long-lived, FREE VPC). Use --include-network for a full teardown."
+  log_info "long-lived VPC). NOTE: the VPC is free, but its ~8 interface endpoints"
+  log_info "still bill (~a few \$/day). Use --include-network for a full teardown."
 fi
 
 if [[ "${ASSUME_YES}" != "1" ]]; then
@@ -135,7 +143,10 @@ if [[ "${INCLUDE_NETWORK}" != "1" ]]; then
     echo
     log_header "What's left behind (and why)"
     log_info "Retained: ${BASE}Network — the long-lived VPC (subnets, security groups,"
-    log_info "and VPC endpoints). It has NO NAT gateway, so it costs nothing to keep."
+    log_info "and VPC endpoints). There is NO NAT gateway, so the VPC itself is free,"
+    log_info "BUT it keeps ~8 interface endpoints that bill ~\$0.01/hr each per AZ"
+    log_info "(~a few \$/day across 2 AZs). To stop that cost, remove Network with"
+    log_info "--include-network once AWS has released the ENIs (see below)."
     echo
     log_info "Why it isn't deleted now:"
     log_info "  • By design, a default 'destroy' keeps the network so the next 'deploy'"
