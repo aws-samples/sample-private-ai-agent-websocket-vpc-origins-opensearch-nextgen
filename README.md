@@ -123,9 +123,13 @@ incur charges:
   embeddings models.
 
 Run `./scripts/destroy.sh` when you are finished to remove the per-deploy
-resources and stop ongoing charges (the long-lived VPC is free; see Destroy
-below). Review the [AWS Pricing](https://aws.amazon.com/pricing/) pages for the
-current rates in your Region.
+resources and stop most ongoing charges. Note the default teardown **retains the
+`…Network` stack**, whose VPC is free (no NAT gateway) but which keeps the ~8 VPC
+interface endpoints listed above billing (~a few $/day across 2 AZs). To stop
+that cost too, run a full teardown with `--include-network` once AWS has released
+the AgentCore ENIs (see Destroy below). Review the
+[AWS Pricing](https://aws.amazon.com/pricing/) pages for the current rates in
+your Region.
 
 ## Prerequisites
 
@@ -202,7 +206,7 @@ ORIGIN_DOMAIN_NAME=agent-origin.example.com \
 
 Off-topic prompts (e.g. "what's the weather?") are refused by design.
 
-## Destroy — fast, ordered teardown (retains the free VPC)
+## Destroy — fast, ordered teardown (retains the VPC by default)
 
 ```bash
 cd cdk
@@ -246,8 +250,14 @@ This is deliberate, for two reasons:
    ~8 hours** (occasionally longer; see the
    [AgentCore VPC docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/agentcore-vpc.html)).
    While any remain attached, the VPC/subnets/SG cannot be deleted. Rather than
-   block teardown waiting for AWS to reclaim them, the default destroy keeps the (free,
-   NAT-less) VPC so the ENIs sit there harmlessly.
+   block teardown waiting for AWS to reclaim them, the default destroy keeps the
+   NAT-less VPC so the ENIs sit there harmlessly.
+
+> **Cost note:** the retained VPC itself is free (no NAT gateway), but the
+> `…Network` stack also keeps the ~8 VPC interface endpoints, which bill
+> ~$0.01/hr each per AZ (~a few $/day across 2 AZs). Retaining the network is
+> therefore not zero-cost. If you are done for good, run `--include-network`
+> (below) once AWS has released the ENIs to remove those endpoints too.
 
 **To remove the network completely**, once AWS has released the ENIs:
 
