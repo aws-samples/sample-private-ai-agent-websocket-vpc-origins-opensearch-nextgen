@@ -69,6 +69,7 @@ log_warn "This deployment creates BILLABLE AWS resources. Run ./scripts/destroy.
 
 # --- preflight: PATH, credentials, bootstrap (NO container engine) -----------
 preflight_path
+preflight_deps "${CDK_DIR}"   # ensures cdk/node_modules exists (fresh clone)
 preflight_credentials   # sets ACCOUNT if unset
 preflight_bootstrap "${ACCOUNT}" "${REGION}"
 

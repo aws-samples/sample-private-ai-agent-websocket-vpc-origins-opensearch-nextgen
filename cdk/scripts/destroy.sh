@@ -65,6 +65,7 @@ done
 
 log_header "Private Real-Time AI Agent — destroy"
 
+preflight_deps "${CDK_DIR}"   # ensures cdk/node_modules exists (cdk destroy runs the app)
 preflight_credentials   # sets ACCOUNT (no container engine needed for destroy)
 
 INSTANCE_NAME="${INSTANCE_NAME:-$(node -e "try{const c=require('./cdk.json');process.stdout.write(((c.context||{}).agent||{}).instanceName||'demo')}catch(e){process.stdout.write('demo')}")}"
