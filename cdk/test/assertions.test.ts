@@ -346,6 +346,29 @@ describe('DataStack — OpenSearch provisioner + uploads', () => {
     // No wildcard aoss action anywhere in the data stack policies.
     expect(rendered).not.toContain('"aoss:*"');
   });
+
+  test('the provisioner may create ONLY the aoss service-linked role', () => {
+    // The first collection in a fresh account triggers creation of the aoss
+    // service-linked role, so the bootstrap role needs iam:CreateServiceLinkedRole
+    // — but scoped to exactly that role (exact ARN path + service-name condition),
+    // never a broad role-creation grant.
+    dataTemplate.hasResourceProperties('AWS::IAM::Policy', {
+      PolicyDocument: Match.objectLike({
+        Statement: Match.arrayWith([
+          Match.objectLike({
+            Sid: 'AllowAossServiceLinkedRoleCreation',
+            Effect: 'Allow',
+            Action: 'iam:CreateServiceLinkedRole',
+            Resource:
+              'arn:aws:iam::*:role/aws-service-role/observability.aoss.amazonaws.com/AWSServiceRoleForAmazonOpenSearchServerless',
+            Condition: {
+              StringEquals: { 'iam:AWSServiceName': 'observability.aoss.amazonaws.com' },
+            },
+          }),
+        ]),
+      }),
+    });
+  });
 });
 
 describe('AppStack — Cognito auth layer', () => {
