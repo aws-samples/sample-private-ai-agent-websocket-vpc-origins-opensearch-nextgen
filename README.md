@@ -25,6 +25,27 @@ CloudShell** with nothing but the AWS CLI, Node.js, and the CDK CLI.
 > contract review against the Example Corp SOPs, and it will not reveal its prompt or
 > SOP contents.
 
+> ⚠️ **Prerequisite — enable Amazon Bedrock model access first (one-time, per account/region).**
+> On a **new AWS account** (or one that has never used these models), you must
+> enable model access for **Anthropic Claude Sonnet 4.5** and **Amazon Titan Text
+> Embeddings V2** in your deploy Region (default `us-east-1`) **before** using the
+> solution — otherwise queries fail with `inference_failed` (a Bedrock
+> `AccessDeniedException` on the Marketplace subscription). The agent's scoped
+> role cannot self-subscribe by design, so this cannot be automated by the deploy.
+> Enable it once via the **Bedrock console → Model access**, or by making a single
+> Bedrock API call with a principal that has the required permissions, for example:
+>
+> ```bash
+> aws bedrock-runtime converse --region us-east-1 \
+>   --model-id "us.anthropic.claude-sonnet-4-5-20250929-v1:0" \
+>   --messages '[{"role":"user","content":[{"text":"ping"}]}]' \
+>   --inference-config '{"maxTokens":5}'
+> ```
+>
+> The first call may report the subscription is initiating ("try again after 2
+> minutes"); re-run until it returns `pong`. See
+> [Amazon Bedrock model access permissions](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html#model-access-permissions).
+
 > 📘 **New here?** See **[DEPLOYMENT.md](DEPLOYMENT.md)** for a step-by-step
 > deployment walkthrough (prerequisites, deploy, test, and teardown).
 
