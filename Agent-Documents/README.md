@@ -11,15 +11,15 @@ Partner uploads contract (PDF)
         │
         ▼
 ┌─────────────────────────┐
-│  Bedrock Agent           │
-│  (System Prompt locked   │
-│   to contract review)    │
+│  Bedrock Agent          │
+│  (System Prompt locked  │
+│   to contract review)   │
 └─────────┬───────────────┘
           │ RAG retrieval
           ▼
 ┌─────────────────────────┐
-│  OpenSearch Serverless   │
-│  (Knowledge Base)        │
+│  OpenSearch Serverless  │
+│  (Knowledge Base)       │
 │  ┌───────────────────┐  │
 │  │ SOP-001 Financial │  │
 │  │ SOP-002 IP/Confid │  │
@@ -30,16 +30,16 @@ Partner uploads contract (PDF)
           │ Relevant SOP chunks
           ▼
 ┌─────────────────────────┐
-│  Agent Analysis          │
-│  Compare contract ↔ SOPs │
+│  Agent Analysis         │
+│  Compare contract ↔ SOPs│
 └─────────┬───────────────┘
           │
           ▼
 ┌─────────────────────────┐
-│  Structured Report       │
-│  Findings + Disposition  │
-│  (REJECTED/CONDITIONAL/  │
-│   APPROVED)              │
+│  Structured Report      │
+│  Findings + Disposition │
+│  (REJECTED/CONDITIONAL/ │
+│   APPROVED)             │
 └─────────────────────────┘
 ```
 
