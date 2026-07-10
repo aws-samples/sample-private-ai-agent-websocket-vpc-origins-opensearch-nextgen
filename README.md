@@ -1,4 +1,4 @@
-<h1 align="center">Private AI agent with streaming WebSocket over CloudFront VPC Origins and the next generation of OpenSearch Serverless for knowledge retrieval</h1>
+<h1 align="center">Private AI agent with WebSocket streaming over CloudFront VPC Origins and the next generation of OpenSearch Serverless for knowledge retrieval</h1>
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT--0-yellow.svg" alt="License: MIT-0"></a>
@@ -10,7 +10,6 @@
   <a href="#"><img src="https://img.shields.io/badge/Node.js-20%2B-green.svg" alt="Node.js 20+"></a>
 </p>
 
-# Private, Real-Time AI Agent with CloudFront WebSocket VPC Origins and OpenSearch Serverless NextGen
 
 Reviewing partner contracts by hand is slow and repetitive, so teams want an AI agent to do the first pass. In the example used throughout this post, a company called Example Corp reviews incoming partner agreements against its own standard operating procedures. A partner uploads an agreement, the agent checks it against those procedures, and the findings stream back on screen as the agent works through them. The streaming matters, because a full review takes a while to generate, and showing the text as it is written lets the reviewer start reading the first findings instead of waiting at a blank screen for the whole thing. Because those agreements contain sensitive commercial terms, the entire backend must stay private, with no public endpoints exposed to the Internet.
 
